@@ -239,6 +239,29 @@
   font-weight: 400;
 }
 
+/* ---------- Filter Tabs ---------- */
+#wup-app .filter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+#wup-app .filter-tab {
+  padding: 8px 20px;
+  border-radius: 99px;
+  border: 2px solid var(--gray-light);
+  background: var(--white);
+  color: var(--primary-mid);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+#wup-app .filter-tab:hover { border-color: var(--orange); color: var(--orange); }
+#wup-app .filter-tab.active { background: var(--orange); border-color: var(--orange); color: var(--white); box-shadow: 0 4px 12px rgba(229,119,17,.3); }
+
 #wup-app .coach-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -1509,6 +1532,31 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbyRPpzCcN0h2kMyg6xKVMJroRZwQqYyxXtGmuaqtHh8BCVVQbHvT6DKjzJs0HrqFtyv/exec';
 const EVENT_DATES = ['2026-03-13', '2026-03-14', '2026-03-15'];
 
+const IMG_BASE = 'https://lucasammarco-lab.github.io/wup-coach-booking/img/coaches/';
+const COACH_META = {
+  'coach_001': { photo: IMG_BASE+'coach_001.png', bio: 'Trader esperto in Forex, Indici e Criptovalute.',                                                                                                    category: 'trading'      },
+  'coach_002': { photo: IMG_BASE+'coach_002.png', bio: 'Investitore immobiliare, esperto in mercato libero e stralci.',                                                                                     category: 'immobiliare'  },
+  'coach_003': { photo: IMG_BASE+'coach_003.png', bio: 'Trader esperta in Commodity Spread Trading.',                                                                                                       category: 'trading'      },
+  'coach_004': { photo: IMG_BASE+'coach_004.png', bio: 'Trader esperto in Forex e AI applicata al trading.',                                                                                                category: 'trading'      },
+  'coach_005': { photo: IMG_BASE+'coach_005.png', bio: 'Trader esperto in Forex e utilizzo delle piattaforme.',                                                                                             category: 'trading'      },
+  'coach_006': { photo: IMG_BASE+'coach_006.png', bio: 'Investitrice immobiliare, esperta di mercato libero, aste, stralci, cessioni di compromesso.',                                                      category: 'immobiliare'  },
+  'coach_007': { photo: IMG_BASE+'coach_007.png', bio: 'Trader esperto in Forex, Cripto, ETF, Commodity.',                                                                                                  category: 'trading'      },
+  'coach_009': { photo: IMG_BASE+'coach_009.png', bio: 'Fondatore di Sana Finestra, ha trasformato la sua azienda con Smart Business Lab, aumentando il fatturato e automatizzando i processi.',            category: 'business'     },
+  'coach_010': { photo: IMG_BASE+'coach_010.png', bio: 'Imprenditore nel fitness e Mentor SBL, ha migliorato le sue competenze imprenditoriali, aumentando margini e acquisendo 250 clienti.',             category: 'business'     },
+  'coach_011': { photo: IMG_BASE+'coach_011.png', bio: 'Trader esperto in Commodity e in Mindset.',                                                                                                         category: 'trading'      },
+  'coach_013': { photo: IMG_BASE+'coach_013.png', bio: 'Trader esperto in opzioni USA.',                                                                                                                    category: 'trading'      },
+  'coach_014': { photo: IMG_BASE+'coach_014.png', bio: 'Trader con 17 anni di esperienza, specializzato in criptovalute.',                                                                                  category: 'trading'      },
+  'coach_015': { photo: null,                     bio: 'Coach esperta di linguistica e mindset sul denaro.',                                                                                                 category: 'mindset'      },
+  'coach_017': { photo: IMG_BASE+'coach_017.png', bio: 'Investitore dinamico nel mercato libero, attivo in cessioni preliminari, appassionato di opportunità immobiliari e crescita personale.',            category: 'immobiliare'  },
+  'coach_018': { photo: IMG_BASE+'coach_018.png', bio: 'Co-fondatore di Connessione Finanziaria, gestisce diverse aziende nei settori automotive, Blockchain e trading immobiliare.',                      category: 'business'     },
+  'coach_024': { photo: null,                     bio: 'Esperto di trading.',                                                                                                                               category: 'trading'      },
+  'coach_025': { photo: null,                     bio: 'Trading Concierge.',                                                                                                                                category: 'trading'      },
+  'coach_026': { photo: IMG_BASE+'coach_026.png', bio: 'Investitore immobiliare.',                                                                                                                          category: 'immobiliare'  },
+  'coach_027': { photo: null,                     bio: 'Coach esperto di trading.',                                                                                                                         category: 'trading'      },
+  'coach_028': { photo: null,                     bio: 'Coach esperta di mindset.',                                                                                                                         category: 'mindset'      },
+  'coach_029': { photo: null,                     bio: 'Business Mentor SBL.',                                                                                                                              category: 'business'     },
+};
+
 const state = { coaches:[], selectedCoach:null, selectedDate:null, selectedSlot:null, summaryCache:{}, slotsCache:{} };
 
 window.wupShowCoaches = function() {
@@ -1582,32 +1630,69 @@ async function initIndexPage() {
 
 function renderCoaches(container, coaches) {
   container.innerHTML = '';
+
+  /* Header */
   const header = document.createElement('div'); header.className = 'section-header';
   header.innerHTML = '<div class="section-title">I nostri Coach</div><div class="section-subtitle">Scegli il coach con cui desideri prenotare una sessione</div>';
   container.appendChild(header);
+
+  /* Filter tabs */
+  const tabs = [
+    { key: 'tutti',       label: 'Tutti' },
+    { key: 'trading',     label: 'Trading' },
+    { key: 'immobiliare', label: 'Immobiliare' },
+    { key: 'business',    label: 'Business' },
+    { key: 'mindset',     label: 'Mindset' },
+  ];
+  const tabBar = document.createElement('div'); tabBar.className = 'filter-tabs';
+  tabs.forEach(function(t) {
+    const btn = document.createElement('button');
+    btn.className = 'filter-tab' + (t.key === 'tutti' ? ' active' : '');
+    btn.textContent = t.label;
+    btn.dataset.filter = t.key;
+    btn.addEventListener('click', function() {
+      tabBar.querySelectorAll('.filter-tab').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      grid.querySelectorAll('.coach-card').forEach(function(card) {
+        card.style.display = (t.key === 'tutti' || card.dataset.category === t.key) ? '' : 'none';
+      });
+    });
+    tabBar.appendChild(btn);
+  });
+  container.appendChild(tabBar);
+
+  /* Grid */
   const grid = document.createElement('div'); grid.className = 'coach-grid fade-in';
   coaches.forEach(function(coach) {
     const fullName = (coach.nome||'')+' '+(coach.cognome||'');
-    const card = document.createElement('div'); card.className = 'coach-card';
+    const meta = COACH_META[coach.id] || {};
+    const photoUrl = meta.photo || null;
+    const bioText  = meta.bio  || coach.bio || '';
+    const category = meta.category || 'tutti';
+
+    const card = document.createElement('div');
+    card.className = 'coach-card';
+    card.dataset.category = category;
 
     /* Card top */
     const top = document.createElement('div'); top.className = 'coach-card-top';
 
-    /* Avatar wrapper */
+    /* Avatar */
     const avatarWrap = document.createElement('div'); avatarWrap.className = 'coach-avatar-wrap';
-    const img = document.createElement('img'); img.className='coach-avatar'; img.alt=fullName; img.src=avatarFallback(fullName);
-    if (coach.foto_url) { const t=new Image(); t.onload=()=>{img.src=coach.foto_url;}; t.src=coach.foto_url; }
+    const img = document.createElement('img'); img.className = 'coach-avatar'; img.alt = fullName;
+    img.src = avatarFallback(fullName);
+    if (photoUrl) { const t = new Image(); t.onload = function() { img.src = photoUrl; }; t.src = photoUrl; }
     avatarWrap.appendChild(img);
 
-    const ne = document.createElement('div'); ne.className='coach-name'; ne.textContent=fullName.trim();
-    const re = document.createElement('div'); re.className='coach-role-tag'; re.textContent=coach.ruolo||'Coach';
+    const ne = document.createElement('div'); ne.className = 'coach-name'; ne.textContent = fullName.trim();
+    const re = document.createElement('div'); re.className = 'coach-role-tag'; re.textContent = coach.ruolo || 'Coach';
     top.appendChild(avatarWrap); top.appendChild(ne); top.appendChild(re);
 
     /* Card body */
-    const body = document.createElement('div'); body.className='coach-card-body';
-    const bio = document.createElement('p'); bio.className='coach-bio'; bio.textContent=truncate(coach.bio||'',120);
-    const divider = document.createElement('div'); divider.className='coach-card-divider';
-    const btn = document.createElement('button'); btn.className='btn btn-primary btn-full'; btn.textContent='Prenota ora';
+    const body = document.createElement('div'); body.className = 'coach-card-body';
+    const bio = document.createElement('p'); bio.className = 'coach-bio'; bio.textContent = truncate(bioText, 120);
+    const divider = document.createElement('div'); divider.className = 'coach-card-divider';
+    const btn = document.createElement('button'); btn.className = 'btn btn-primary btn-full'; btn.textContent = 'Prenota ora';
     btn.addEventListener('click', function() { wupShowBooking(coach.id); });
     body.appendChild(bio); body.appendChild(divider); body.appendChild(btn);
 
