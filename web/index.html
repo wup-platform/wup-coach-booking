@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WUP Coach Booking – Scegli il tuo Coach</title>
+  <meta name="description" content="Prenota una sessione WUP con il tuo coach preferito.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header>
+    <div class="container header-inner">
+      <div>
+        <div class="logo">WUP</div>
+        <div class="logo-subtitle">Coach Booking Platform</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page-hero">
+    <div class="container">
+      <h1>Scegli il tuo Coach</h1>
+      <p>Seleziona un coach per visualizzare le disponibilità e prenotare la tua sessione WUP.</p>
+    </div>
+  </div>
+
+  <main>
+    <div class="container">
+      <div id="coaches-container">
+        <!-- Stato iniziale: loading -->
+        <div class="loading-overlay">
+          <div class="spinner"></div>
+          <p class="loading-text">Caricamento coach in corso...</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; <span id="year"></span> WUP Coach Booking Platform</p>
+  </footer>
+
+  <script src="app.js"></script>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

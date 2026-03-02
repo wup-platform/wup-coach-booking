@@ -1,0 +1,28 @@
+id,nome,cognome,email,ruolo,bio,foto_url,calendar_managed_id,working_hours_start,working_hours_end,slot_duration_min,active
+coach_001,Andrea,Garagiola,andrea.garagiola@alfiobardolla.com,Coach,,,DA_INSERIRE,09:00,18:00,20,TRUE
+coach_002,Alberto,Colombo,alberto.colombo@alfiobardolla.com,Coach,,,DA_INSERIRE,09:00,18:00,20,TRUE
+coach_003,Antonella,Pasetto,antonella.pasetto@alfiobardolla.com,Coach,,,DA_INSERIRE,09:00,18:00,20,TRUE
+coach_004,Emiliano,Monza,emiliano.monza@alfiobardolla.com,Coach,,,DA_INSERIRE,09:00,18:00,20,TRUE
+coach_005,Fernando,Marras,fernando.marras@alfiobardolla.com,Coach,,,DA_INSERIRE,09:00,18:00,20,TRUE
+coach_006,Floriana,Pagliano,floriana.pagliano@alfiobardolla.com,Coach,,,DA_INSERIRE,09:00,18:00,20,TRUE
+coach_007,Giuseppe,De Marco,giuseppe.demarco@alfiobardolla.com,Coach,,,DA_INSERIRE,09:00,18:00,20,TRUE
+coach_008,Giuseppe,Mirabile,giuseppe.mirabile@alfiobardolla.com,Coach,,,DA_INSERIRE,09:00,18:00,20,FALSE
+coach_009,Gianluca,Ortelli,gianluca.ortelli@smartbusinesslab.com,Mentor,,,DA_INSERIRE,09:00,18:00,20,TRUE
+coach_010,Giovanni,Redi,giovanni.redi@smartbusinesslab.com,Mentor,,,DA_INSERIRE,09:00,18:00,20,TRUE
+coach_011,Leonardo,Fasciano,leonardo.fasciano@alfiobardolla.com,Coach,,,DA_INSERIRE,09:00,18:00,20,TRUE
+coach_012,Manuela,Negro,manuela.negro@alfiobardolla.com,Coach,,,DA_INSERIRE,09:00,18:00,20,FALSE
+coach_013,Nello,Sgambato,nello.sgambato@alfiobardolla.com,Coach,,,DA_INSERIRE,09:00,18:00,20,TRUE
+coach_014,Nicola,Acquistapace,nicola.acquistapace@alfiobardolla.com,Coach,,,DA_INSERIRE,09:00,18:00,20,TRUE
+coach_015,Sabrina,Lovallo,sabrina.lovallo@alfiobardolla.com,Coach,,,DA_INSERIRE,09:00,18:00,20,TRUE
+coach_016,Saverio,Rodriguez,saverio.rodriguez@smartbusinesslab.com,Coach,,,DA_INSERIRE,09:00,18:00,20,FALSE
+coach_017,Stefano,Crestan,stefano.crestan@alfiobardolla.com,Coach,,,DA_INSERIRE,09:00,18:00,20,TRUE
+coach_018,Marco,Migliaccio,marco.migliaccio@smartbusinesslab.com,Mentor,,,DA_INSERIRE,09:00,18:00,20,TRUE
+coach_019,Andrea,Garani,andrea.garani@smartbusinesslab.com,Coach,,,DA_INSERIRE,09:00,18:00,20,FALSE
+coach_020,Pasquale,Franzese,pasquale.franzese@smartbusinesslab.com,Coach,,,DA_INSERIRE,09:00,18:00,20,FALSE
+coach_021,Vincenzo,Carotenuto,vincenzo.carotenuto@smartbusinesslab.com,Coach,,,DA_INSERIRE,09:00,18:00,20,FALSE
+coach_022,Robert G.,Allen,info@alfiobardolla.com,Coach,,,DA_INSERIRE,09:00,18:00,20,FALSE
+coach_023,Alessandro,Lombardi,alessandro.lombardi@smartbusinesslab.com,Coach,,,DA_INSERIRE,09:00,18:00,20,FALSE
+coach_024,Christian,Bertacchi,christian.bertacchi@alfiobardolla.com,Coach,,,DA_INSERIRE,09:00,18:00,20,TRUE
+coach_025,Giacomo,Bertuso,giacomo.bertuso@alfiobardolla.com,Coach,,,DA_INSERIRE,09:00,18:00,20,TRUE
+coach_026,Carlo,Cuoco,carlo.cuoco@alfiobardolla.com,Coach,,,DA_INSERIRE,09:00,18:00,20,TRUE
+coach_027,Paolo,Lavorenti,paolo.lavorenti@alfiobardolla.com,Coach,,,DA_INSERIRE,09:00,18:00,20,TRUE

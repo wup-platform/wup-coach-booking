@@ -1,0 +1,1801 @@
+<style>
+/* ============================================================
+   WUP COACH BOOKING — Premium UI
+   All CSS scoped under #wup-app
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* ---------- CSS Custom Properties ---------- */
+#wup-app {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  line-height: 1.6;
+  color: #1a1a1a;
+  background: #FFFFFF;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  --orange:        #E57711;
+  --orange-hover:  #c96510;
+  --orange-light:  #fff4eb;
+  --orange-mid:    #fde8d0;
+  --cta:           #31B15C;
+  --cta-hover:     #279a4f;
+  --cta-light:     #eaf7ef;
+  --primary:       #111827;
+  --primary-mid:   #374151;
+  --gray-text:     #6b7280;
+  --gray-light:    #e5e7eb;
+  --gray-xlight:   #f9fafb;
+  --error:         #dc2626;
+  --white:         #FFFFFF;
+  --radius:        16px;
+  --radius-sm:     10px;
+  --radius-xs:     6px;
+  --shadow-sm:     0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow:        0 4px 16px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.04);
+  --shadow-lg:     0 12px 40px rgba(0,0,0,.12), 0 4px 12px rgba(0,0,0,.06);
+  --transition:    .2s cubic-bezier(.4,0,.2,1);
+}
+
+#wup-app *, #wup-app *::before, #wup-app *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+#wup-app img { max-width: 100%; display: block; }
+#wup-app a { color: var(--cta); text-decoration: underline; }
+
+/* ---------- Layout ---------- */
+#wup-app .wup-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+#wup-app .wup-main { padding: 32px 0 64px; }
+
+/* ---------- Utility ---------- */
+#wup-app .hidden    { display: none !important; }
+#wup-app .mt-8      { margin-top: 8px; }
+#wup-app .mt-16     { margin-top: 16px; }
+#wup-app .mt-24     { margin-top: 24px; }
+
+/* ---------- Animations ---------- */
+@keyframes wup-spin     { to { transform: rotate(360deg); } }
+@keyframes wup-fadeIn   { from { opacity: 0; } to { opacity: 1; } }
+@keyframes wup-slideUp  { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes wup-shimmer  { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
+@keyframes wup-checkDraw {
+  from { stroke-dashoffset: 60; opacity: 0; }
+  to   { stroke-dashoffset: 0;  opacity: 1; }
+}
+@keyframes wup-circleDraw {
+  from { stroke-dashoffset: 200; }
+  to   { stroke-dashoffset: 0; }
+}
+@keyframes wup-popIn {
+  0%   { transform: scale(.6); opacity: 0; }
+  70%  { transform: scale(1.08); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+#wup-app .fade-in  { animation: wup-fadeIn  .35s ease both; }
+#wup-app .slide-up { animation: wup-slideUp .35s ease both; }
+
+/* ---------- Spinner ---------- */
+#wup-app .spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--gray-light);
+  border-top-color: var(--orange);
+  border-radius: 50%;
+  animation: wup-spin .75s linear infinite;
+  flex-shrink: 0;
+}
+
+/* ---------- Loading overlay ---------- */
+#wup-app .loading-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 24px;
+  flex-direction: column;
+  gap: 18px;
+}
+#wup-app .loading-text {
+  color: var(--gray-text);
+  font-size: .9rem;
+  font-weight: 500;
+}
+
+/* ---------- Buttons ---------- */
+#wup-app .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 26px;
+  border-radius: var(--radius-sm);
+  font-size: .95rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+  transition:
+    background var(--transition),
+    color var(--transition),
+    border-color var(--transition),
+    box-shadow var(--transition),
+    transform var(--transition);
+  font-family: inherit;
+  letter-spacing: .01em;
+}
+#wup-app .btn:active { transform: scale(.97); }
+#wup-app .btn:disabled { opacity: .5; cursor: not-allowed; pointer-events: none; }
+
+#wup-app .btn-primary {
+  background: var(--cta);
+  color: var(--white);
+  box-shadow: 0 2px 8px rgba(49,177,92,.25);
+}
+#wup-app .btn-primary:hover {
+  background: var(--cta-hover);
+  box-shadow: 0 4px 16px rgba(49,177,92,.35);
+}
+
+#wup-app .btn-outline {
+  background: transparent;
+  color: var(--primary-mid);
+  border: 2px solid var(--gray-light);
+}
+#wup-app .btn-outline:hover {
+  border-color: var(--orange);
+  color: var(--orange);
+  background: var(--orange-light);
+}
+
+#wup-app .btn-sm { padding: 9px 18px; font-size: .85rem; }
+#wup-app .btn-full { width: 100%; }
+
+/* ---------- Alerts ---------- */
+#wup-app .alert {
+  padding: 14px 18px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 20px;
+  font-size: .9rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-weight: 500;
+}
+#wup-app .alert-success {
+  background: var(--cta-light);
+  color: #166534;
+  border-left: 4px solid var(--cta);
+}
+#wup-app .alert-error {
+  background: #fef2f2;
+  color: #991b1b;
+  border-left: 4px solid var(--error);
+}
+#wup-app .alert-warning {
+  background: var(--orange-light);
+  color: #92400e;
+  border-left: 4px solid var(--orange);
+}
+#wup-app .alert-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+/* ---------- Back link ---------- */
+#wup-app .back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--gray-text);
+  font-size: .9rem;
+  font-weight: 500;
+  text-decoration: none;
+  margin-bottom: 24px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: inherit;
+  padding: 8px 12px;
+  border-radius: var(--radius-xs);
+  transition: background var(--transition), color var(--transition);
+}
+#wup-app .back-link:hover {
+  color: var(--orange);
+  background: var(--orange-light);
+}
+#wup-app .back-link-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--gray-light);
+  font-size: .9rem;
+  transition: background var(--transition);
+}
+#wup-app .back-link:hover .back-link-arrow {
+  background: var(--orange-mid);
+}
+
+/* =====================================================
+   COACH GRID
+   ===================================================== */
+#wup-app .section-header { margin-bottom: 36px; }
+#wup-app .section-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: -.02em;
+  margin-bottom: 8px;
+}
+#wup-app .section-subtitle {
+  color: var(--gray-text);
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+#wup-app .coach-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+@media (min-width: 600px)  { #wup-app .coach-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 960px)  { #wup-app .coach-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 1200px) { #wup-app .coach-grid { grid-template-columns: repeat(4, 1fr); } }
+
+#wup-app .coach-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  border: 1px solid var(--gray-light);
+  transition:
+    box-shadow var(--transition),
+    transform var(--transition),
+    border-color var(--transition);
+  position: relative;
+}
+#wup-app .coach-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
+  border-color: rgba(229,119,17,.2);
+}
+
+/* Card top gradient header */
+#wup-app .coach-card-top {
+  background: linear-gradient(145deg, #E57711 0%, #c96510 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 20px 24px;
+  height: 180px;
+  position: relative;
+  justify-content: flex-end;
+}
+
+/* Decorative circles in card header */
+#wup-app .coach-card-top::before {
+  content: '';
+  position: absolute;
+  top: -24px;
+  right: -24px;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.08);
+}
+#wup-app .coach-card-top::after {
+  content: '';
+  position: absolute;
+  bottom: -32px;
+  left: -16px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.06);
+}
+
+/* Avatar wrapper with white ring and shadow */
+#wup-app .coach-avatar-wrap {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+#wup-app .coach-avatar {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  border: 3px solid var(--white);
+  object-fit: cover;
+  background: var(--orange-hover);
+  display: block;
+  box-shadow: 0 4px 16px rgba(0,0,0,.18);
+}
+#wup-app .coach-name {
+  color: var(--white);
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.3;
+  position: relative;
+  z-index: 2;
+  text-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+#wup-app .coach-role-tag {
+  display: inline-block;
+  margin-top: 0.5em;
+  padding: 3px 10px;
+  background: rgba(255,255,255,.2);
+  border-radius: 20px;
+  color: rgba(255,255,255,.95);
+  font-size: .72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  position: relative;
+  z-index: 2;
+  backdrop-filter: blur(4px);
+}
+
+#wup-app .coach-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 20px 20px;
+  margin-top: 12px;
+}
+#wup-app .coach-bio {
+  color: var(--gray-text);
+  font-size: .875rem;
+  flex: 1;
+  margin-bottom: 10px;
+  line-height: 1.65;
+}
+#wup-app .coach-card-divider {
+  height: 1px;
+  background: var(--gray-light);
+  margin-bottom: 20px;
+}
+
+/* =====================================================
+   COACH INFO BAR (booking page top)
+   ===================================================== */
+#wup-app .coach-info-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 28px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-light);
+  position: relative;
+  overflow: hidden;
+}
+#wup-app .coach-info-bar::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(to bottom, var(--orange), var(--orange-hover));
+  border-radius: 2px 0 0 2px;
+}
+#wup-app .coach-info-bar .coach-avatar {
+  width: 52px;
+  height: 52px;
+  border: 2px solid var(--orange-mid);
+  margin: 0;
+  box-shadow: none;
+}
+#wup-app .coach-info-bar .coach-name {
+  color: var(--primary);
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: left;
+  text-shadow: none;
+  margin-bottom: 2px;
+}
+#wup-app .coach-info-bar .coach-role {
+  color: var(--orange);
+  font-size: .75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+/* =====================================================
+   STEP INDICATOR
+   ===================================================== */
+#wup-app .step-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 36px;
+  padding: 0 8px;
+}
+#wup-app .step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+#wup-app .step-num {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: .9rem;
+  border: 2px solid var(--gray-light);
+  background: var(--white);
+  color: var(--gray-text);
+  transition:
+    background var(--transition),
+    border-color var(--transition),
+    color var(--transition),
+    box-shadow var(--transition);
+  position: relative;
+  z-index: 1;
+}
+#wup-app .step-item.active .step-num {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: var(--white);
+  box-shadow: 0 0 0 4px rgba(229,119,17,.18);
+}
+#wup-app .step-item.done .step-num {
+  background: var(--cta);
+  border-color: var(--cta);
+  color: var(--white);
+  box-shadow: none;
+}
+/* checkmark SVG inside done step */
+#wup-app .step-item.done .step-num::after {
+  content: '';
+  display: block;
+  width: 14px;
+  height: 10px;
+  border-left: 2.5px solid #fff;
+  border-bottom: 2.5px solid #fff;
+  transform: rotate(-45deg) translateY(-1px);
+  position: absolute;
+}
+#wup-app .step-item.done .step-num-text { display: none; }
+
+#wup-app .step-label {
+  font-size: .72rem;
+  font-weight: 500;
+  color: var(--gray-text);
+  white-space: nowrap;
+  letter-spacing: .02em;
+}
+#wup-app .step-item.active .step-label {
+  color: var(--orange);
+  font-weight: 700;
+}
+#wup-app .step-item.done .step-label {
+  color: var(--cta);
+  font-weight: 600;
+}
+
+#wup-app .step-line {
+  flex: 1;
+  height: 2px;
+  background: var(--gray-light);
+  margin: 0 4px;
+  margin-bottom: 28px;
+  min-width: 20px;
+  border-radius: 1px;
+  transition: background .4s ease;
+  position: relative;
+  overflow: hidden;
+}
+#wup-app .step-line.done {
+  background: var(--cta);
+}
+
+/* =====================================================
+   STEP 1 — DATE SELECTION
+   ===================================================== */
+#wup-app .calendar-section { margin-bottom: 28px; }
+#wup-app .step-section-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+#wup-app .step-section-title::before {
+  content: '';
+  display: block;
+  width: 4px;
+  height: 20px;
+  background: var(--orange);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* Date card buttons — premium vertical cards */
+#wup-app .date-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 440px;
+}
+
+#wup-app .date-event-btn {
+  width: 100%;
+  border-radius: var(--radius);
+  border: 2px solid var(--gray-light);
+  background: var(--white);
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    border-color var(--transition),
+    background var(--transition),
+    box-shadow var(--transition),
+    transform var(--transition);
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+}
+#wup-app .date-event-btn:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 2px;
+}
+
+/* Big day number display */
+#wup-app .date-day-num {
+  font-size: 3.5rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -.03em;
+  color: var(--gray-light);
+  transition: color var(--transition);
+  min-width: 72px;
+  text-align: center;
+  flex-shrink: 0;
+}
+#wup-app .date-info {
+  flex: 1;
+}
+#wup-app .date-weekday {
+  font-size: .75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--gray-text);
+  margin-bottom: 2px;
+  transition: color var(--transition);
+}
+#wup-app .date-monthyear {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--primary-mid);
+  transition: color var(--transition);
+}
+#wup-app .date-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  margin-top: 6px;
+  transition: background var(--transition), color var(--transition);
+}
+#wup-app .date-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Available state */
+#wup-app .date-event-btn.available {
+  border-color: var(--cta);
+}
+#wup-app .date-event-btn.available .date-day-num { color: var(--cta); }
+#wup-app .date-event-btn.available .date-weekday { color: var(--cta); }
+#wup-app .date-event-btn.available .date-monthyear { color: var(--primary); }
+#wup-app .date-event-btn.available .date-badge { background: var(--cta-light); color: #166534; }
+#wup-app .date-event-btn.available .date-badge-dot { background: var(--cta); }
+#wup-app .date-event-btn.available:hover {
+  background: var(--cta-light);
+  box-shadow: var(--shadow);
+  transform: translateX(4px);
+}
+
+/* Selected state */
+#wup-app .date-event-btn.selected {
+  background: linear-gradient(135deg, var(--orange) 0%, var(--orange-hover) 100%) !important;
+  border-color: var(--orange) !important;
+  box-shadow: 0 6px 20px rgba(229,119,17,.3) !important;
+  transform: translateX(4px);
+}
+#wup-app .date-event-btn.selected .date-day-num { color: rgba(255,255,255,.9); }
+#wup-app .date-event-btn.selected .date-weekday { color: rgba(255,255,255,.8); }
+#wup-app .date-event-btn.selected .date-monthyear { color: var(--white); }
+#wup-app .date-event-btn.selected .date-badge {
+  background: rgba(255,255,255,.25);
+  color: var(--white);
+}
+#wup-app .date-event-btn.selected .date-badge-dot { background: rgba(255,255,255,.8); }
+
+/* Unavailable state */
+#wup-app .date-event-btn.unavailable {
+  opacity: .4;
+  cursor: not-allowed;
+}
+#wup-app .date-event-btn.unavailable .date-badge { background: var(--gray-light); color: var(--gray-text); }
+#wup-app .date-event-btn.unavailable .date-badge-dot { background: var(--gray-text); }
+
+/* Loading state shimmer */
+#wup-app .date-event-btn.loading {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+#wup-app .date-event-btn.loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,.7) 50%, transparent 100%);
+  background-size: 400px 100%;
+  animation: wup-shimmer 1.4s infinite;
+}
+
+/* =====================================================
+   STEP 2 — TIME SLOTS
+   ===================================================== */
+#wup-app .slots-section { margin-bottom: 28px; }
+#wup-app .slots-date-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--orange-light);
+  color: var(--orange-hover);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: .85rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  border: 1px solid var(--orange-mid);
+}
+#wup-app .slots-date-badge-icon {
+  font-size: .9rem;
+}
+
+#wup-app .slots-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+#wup-app .slot-chip {
+  padding: 10px 20px;
+  border-radius: 30px;
+  border: 2px solid var(--gray-light);
+  background: var(--white);
+  color: var(--primary-mid);
+  font-size: .9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color var(--transition),
+    background var(--transition),
+    color var(--transition),
+    box-shadow var(--transition),
+    transform var(--transition);
+  font-family: inherit;
+  letter-spacing: .01em;
+}
+#wup-app .slot-chip:hover {
+  border-color: var(--orange);
+  color: var(--orange);
+  background: var(--orange-light);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(229,119,17,.15);
+}
+#wup-app .slot-chip.selected {
+  background: linear-gradient(135deg, var(--orange) 0%, var(--orange-hover) 100%);
+  border-color: var(--orange);
+  color: var(--white);
+  box-shadow: 0 4px 16px rgba(229,119,17,.35);
+  transform: translateY(-2px);
+}
+
+/* =====================================================
+   STEP 3 — BOOKING FORM
+   ===================================================== */
+#wup-app .booking-form-wrapper {
+  background: var(--white);
+  border-radius: var(--radius);
+  border: 1px solid var(--gray-light);
+  overflow: hidden;
+  margin-bottom: 28px;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Summary gradient bar */
+#wup-app .booking-summary-box {
+  background: linear-gradient(135deg, var(--orange) 0%, var(--orange-hover) 100%);
+  color: var(--white);
+  padding: 20px 28px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+}
+#wup-app .booking-summary-box::after {
+  content: '';
+  position: absolute;
+  right: -40px;
+  top: -40px;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.08);
+}
+#wup-app .summary-item {
+  position: relative;
+  z-index: 1;
+}
+#wup-app .summary-item-label {
+  font-size: .7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: rgba(255,255,255,.75);
+  margin-bottom: 4px;
+}
+#wup-app .summary-item-value {
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--white);
+  line-height: 1.3;
+}
+
+/* Form body */
+#wup-app .form-inner { padding: 28px; }
+
+#wup-app .form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+@media (min-width: 560px) {
+  #wup-app .form-grid { grid-template-columns: 1fr 1fr; }
+}
+#wup-app .form-group { display: flex; flex-direction: column; gap: 6px; }
+#wup-app .form-group.full { grid-column: 1 / -1; }
+
+#wup-app label {
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--primary-mid);
+  letter-spacing: .01em;
+}
+#wup-app label .req { color: var(--orange); margin-left: 2px; }
+
+#wup-app input[type="text"],
+#wup-app input[type="email"],
+#wup-app input[type="tel"],
+#wup-app textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--gray-light);
+  border-radius: var(--radius-sm);
+  font-size: .95rem;
+  color: var(--primary);
+  background: var(--gray-xlight);
+  transition:
+    border-color var(--transition),
+    background var(--transition),
+    box-shadow var(--transition);
+  font-family: inherit;
+}
+#wup-app input[type="text"]:hover,
+#wup-app input[type="email"]:hover,
+#wup-app input[type="tel"]:hover,
+#wup-app textarea:hover {
+  border-color: #d1d5db;
+  background: var(--white);
+}
+#wup-app input:focus,
+#wup-app textarea:focus {
+  outline: none;
+  border-color: var(--orange);
+  background: var(--white);
+  box-shadow: 0 0 0 4px rgba(229,119,17,.12);
+}
+#wup-app input.error,
+#wup-app textarea.error {
+  border-color: var(--error);
+  background: #fef2f2;
+  box-shadow: 0 0 0 4px rgba(220,38,38,.08);
+}
+#wup-app textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+
+/* Privacy checkbox */
+#wup-app .privacy-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  grid-column: 1 / -1;
+  padding: 16px 18px;
+  background: var(--gray-xlight);
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--gray-light);
+  transition: border-color var(--transition);
+}
+#wup-app .privacy-group:focus-within {
+  border-color: var(--orange);
+}
+#wup-app .privacy-checkbox-wrap {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+#wup-app .privacy-group input[type="checkbox"] {
+  position: absolute;
+  inset: 0;
+  width: 20px;
+  height: 20px;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+}
+#wup-app .privacy-custom-check {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--gray-light);
+  border-radius: 5px;
+  background: var(--white);
+  transition: border-color var(--transition), background var(--transition);
+  pointer-events: none;
+  position: relative;
+}
+#wup-app .privacy-group input[type="checkbox"]:checked + .privacy-custom-check {
+  background: var(--orange);
+  border-color: var(--orange);
+}
+#wup-app .privacy-group input[type="checkbox"]:checked + .privacy-custom-check::after {
+  content: '';
+  display: block;
+  width: 10px;
+  height: 7px;
+  border-left: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(-45deg);
+  position: absolute;
+  top: 3px;
+  left: 3px;
+}
+#wup-app .privacy-text {
+  font-size: .83rem;
+  color: var(--gray-text);
+  line-height: 1.55;
+}
+
+#wup-app .field-error {
+  font-size: .78rem;
+  color: var(--error);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+#wup-app .field-error::before {
+  content: '!';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--error);
+  color: #fff;
+  font-size: .65rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+/* Form action row */
+#wup-app .form-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 28px;
+}
+
+/* Submit button with spinner */
+#wup-app .btn-submit-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* =====================================================
+   STEP 4 — CONFIRMATION
+   ===================================================== */
+#wup-app .confirmation-outer {
+  display: flex;
+  justify-content: center;
+  padding: 0;
+}
+#wup-app .confirmation-box {
+  background: var(--white);
+  border-radius: var(--radius);
+  border: 1px solid var(--gray-light);
+  padding: 52px 40px 40px;
+  text-align: center;
+  max-width: 540px;
+  width: 100%;
+  box-shadow: var(--shadow);
+}
+
+/* Animated check icon */
+#wup-app .confirmation-icon-wrap {
+  margin: 0 auto 28px;
+  width: 88px;
+  height: 88px;
+  position: relative;
+  animation: wup-popIn .5s cubic-bezier(.34,1.56,.64,1) both;
+}
+#wup-app .conf-svg {
+  width: 88px;
+  height: 88px;
+}
+#wup-app .conf-circle {
+  fill: none;
+  stroke: var(--cta);
+  stroke-width: 3;
+  stroke-dasharray: 220;
+  stroke-dashoffset: 220;
+  animation: wup-circleDraw .6s .1s cubic-bezier(.4,0,.2,1) forwards;
+  transform-origin: center;
+  transform: rotate(-90deg);
+}
+#wup-app .conf-check {
+  fill: none;
+  stroke: var(--cta);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 60;
+  stroke-dashoffset: 60;
+  animation: wup-checkDraw .4s .65s cubic-bezier(.4,0,.2,1) forwards;
+}
+#wup-app .conf-bg-circle { fill: var(--cta-light); }
+
+#wup-app .confirmation-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--primary);
+  margin-bottom: 10px;
+  letter-spacing: -.02em;
+}
+#wup-app .confirmation-sub {
+  color: var(--gray-text);
+  font-size: .9rem;
+  margin-bottom: 28px;
+  line-height: 1.6;
+}
+
+/* Details card */
+#wup-app .confirmation-details {
+  background: var(--cta-light);
+  border-radius: var(--radius-sm);
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  border: 1px solid rgba(49,177,92,.2);
+  text-align: left;
+}
+#wup-app .confirmation-details dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px 20px;
+}
+#wup-app .confirmation-details dt {
+  font-size: .8rem;
+  font-weight: 600;
+  color: #166534;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  display: flex;
+  align-items: center;
+}
+#wup-app .confirmation-details dd {
+  font-size: .95rem;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+/* Booking ID monospace style */
+#wup-app #conf-id {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: .9rem;
+  background: rgba(49,177,92,.12);
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: .05em;
+}
+
+/* =====================================================
+   GLOBAL ALERT (booking page)
+   ===================================================== */
+#wup-app #global-alert { margin-bottom: 24px; }
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+
+/* --- Tablet (max 768px) --- */
+@media (max-width: 768px) {
+  #wup-app .wup-main { padding: 24px 0 48px; }
+
+  /* Step indicator */
+  #wup-app .step-indicator { margin-bottom: 28px; padding: 0 4px; }
+  #wup-app .step-num { width: 36px; height: 36px; font-size: .85rem; }
+  #wup-app .step-line { min-width: 14px; margin: 0 2px; margin-bottom: 24px; }
+
+  /* Coach info bar */
+  #wup-app .coach-info-bar { padding: 14px 16px; gap: 12px; }
+
+  /* Date cards */
+  #wup-app .date-cards-list { max-width: 100%; }
+  #wup-app .date-event-btn { padding: 18px 20px; gap: 16px; }
+  #wup-app .date-day-num { font-size: 3rem; min-width: 60px; }
+
+  /* Slots */
+  #wup-app .slots-grid { gap: 8px; }
+  #wup-app .slot-chip { padding: 9px 16px; font-size: .88rem; }
+
+  /* Form */
+  #wup-app .form-inner { padding: 20px; }
+  #wup-app .booking-summary-box { padding: 16px 20px; gap: 10px; }
+
+  /* Confirmation */
+  #wup-app .confirmation-box { padding: 36px 24px 28px; }
+}
+
+/* --- Phone (max 560px) --- */
+@media (max-width: 560px) {
+  #wup-app .wup-container { padding: 0 14px; }
+  #wup-app .wup-main { padding: 20px 0 40px; }
+
+  /* Step indicator — hide labels */
+  #wup-app .step-label { display: none; }
+  #wup-app .step-num { width: 32px; height: 36px; font-size: .8rem; }
+  #wup-app .step-indicator { margin-bottom: 22px; }
+  #wup-app .step-line { min-width: 10px; }
+
+  /* Coach info bar */
+  #wup-app .coach-info-bar { padding: 12px 14px; gap: 10px; }
+  #wup-app .coach-info-bar .coach-avatar { width: 44px; height: 44px; }
+  #wup-app .coach-info-bar .coach-name { font-size: .95rem; }
+
+  /* Back link */
+  #wup-app .back-link { font-size: .85rem; margin-bottom: 16px; }
+  #wup-app .back-link-circle { width: 28px; height: 28px; font-size: .85rem; }
+
+  /* Date cards */
+  #wup-app .date-event-btn { padding: 16px; gap: 14px; border-radius: var(--radius-sm); }
+  #wup-app .date-day-num { font-size: 2.6rem; min-width: 52px; }
+  #wup-app .date-monthyear { font-size: .9rem; }
+  #wup-app .date-badge { font-size: .68rem; padding: 3px 8px; }
+
+  /* Slots */
+  #wup-app .slot-chip { padding: 8px 14px; font-size: .85rem; }
+  #wup-app .slots-grid { gap: 7px; }
+  #wup-app .slots-date-badge { padding: 8px 14px; font-size: .82rem; }
+
+  /* Form */
+  #wup-app .booking-summary-box { grid-template-columns: 1fr; gap: 10px; }
+  #wup-app .summary-item + .summary-item { border-top: 1px solid rgba(255,255,255,.2); padding-top: 10px; }
+  #wup-app .form-inner { padding: 16px; }
+  #wup-app .form-actions { flex-direction: column; }
+  #wup-app .form-actions .btn { width: 100%; justify-content: center; }
+
+  /* Confirmation */
+  #wup-app .confirmation-box { padding: 32px 16px 24px; }
+  #wup-app .conf-svg-wrap { width: 72px; height: 72px; }
+  #wup-app .confirmation-title { font-size: 1.3rem; }
+  #wup-app .conf-id { font-size: .8rem; }
+}
+
+/* --- Small phone (max 380px) --- */
+@media (max-width: 380px) {
+  #wup-app .wup-container { padding: 0 10px; }
+  #wup-app .date-event-btn { padding: 14px 12px; gap: 10px; }
+  #wup-app .date-day-num { font-size: 2.2rem; min-width: 44px; }
+  #wup-app .date-badge { display: none; }
+  #wup-app .slot-chip { padding: 7px 11px; font-size: .82rem; }
+  #wup-app .booking-summary-box { padding: 12px 14px; }
+  #wup-app .summary-item-label { font-size: .68rem; }
+  #wup-app .summary-item-value { font-size: .88rem; }
+  #wup-app .step-num { width: 28px; height: 28px; font-size: .75rem; }
+  #wup-app .confirmation-box { padding: 28px 12px 20px; }
+}
+
+/* =====================================================
+   SUPPORT POPUP
+   ===================================================== */
+#wup-help-btn {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--orange);
+  color: var(--white);
+  border: none;
+  font-size: 1.4rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(229,119,17,.45);
+  z-index: 9999;
+  transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+  font-family: inherit;
+}
+#wup-help-btn:hover { background: var(--orange-hover); transform: scale(1.08); box-shadow: 0 6px 24px rgba(229,119,17,.5); }
+
+#wup-help-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 10000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s ease;
+}
+#wup-help-overlay.open { opacity: 1; pointer-events: all; }
+@media (min-width: 560px) { #wup-help-overlay { align-items: center; padding: 20px; } }
+
+#wup-help-modal {
+  background: var(--white);
+  width: 100%;
+  max-width: 480px;
+  border-radius: 20px 20px 0 0;
+  padding: 0;
+  overflow: hidden;
+  transform: translateY(40px);
+  transition: transform .3s cubic-bezier(.4,0,.2,1);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+@media (min-width: 560px) { #wup-help-modal { border-radius: 20px; transform: translateY(20px); } }
+#wup-help-overlay.open #wup-help-modal { transform: translateY(0); }
+
+#wup-help-modal .help-header {
+  background: linear-gradient(135deg, var(--orange) 0%, var(--orange-hover) 100%);
+  padding: 20px 24px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+#wup-help-modal .help-title { color: #fff; font-size: 1.05rem; font-weight: 700; margin: 0; }
+#wup-help-modal .help-close {
+  background: rgba(255,255,255,.2);
+  border: none;
+  color: #fff;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  flex-shrink: 0;
+  transition: background var(--transition);
+}
+#wup-help-modal .help-close:hover { background: rgba(255,255,255,.35); }
+
+#wup-help-modal .help-body { padding: 20px 24px 28px; }
+#wup-help-modal .help-step { display: flex; gap: 14px; margin-bottom: 18px; align-items: flex-start; }
+#wup-help-modal .help-step-num {
+  width: 28px; height: 28px; border-radius: 50%; background: var(--orange);
+  color: #fff; font-size: .8rem; font-weight: 700; display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0; margin-top: 2px;
+}
+#wup-help-modal .help-step-text { font-size: .9rem; color: var(--primary-mid); line-height: 1.5; }
+#wup-help-modal .help-step-text strong { color: var(--primary); display: block; margin-bottom: 2px; }
+#wup-help-modal .help-divider { height: 1px; background: var(--gray-light); margin: 18px 0; }
+#wup-help-modal .help-problem { background: var(--orange-light); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 12px; }
+#wup-help-modal .help-problem-title { font-size: .85rem; font-weight: 700; color: var(--orange-hover); margin-bottom: 4px; }
+#wup-help-modal .help-problem-text { font-size: .83rem; color: var(--primary-mid); line-height: 1.5; }
+</style>
+
+<div id="wup-app">
+
+  <!-- ===== LISTA COACH ===== -->
+  <div id="wup-page-coaches">
+    <div class="wup-main">
+      <div class="wup-container">
+        <div id="coaches-container">
+          <div class="loading-overlay">
+            <div class="spinner"></div>
+            <p class="loading-text">Caricamento coach in corso...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PAGINA BOOKING ===== -->
+  <div id="wup-page-booking" class="hidden">
+    <div class="wup-main">
+      <div class="wup-container">
+
+        <button class="back-link" onclick="wupShowCoaches()">
+          <span class="back-link-arrow">&#8592;</span>
+          Torna ai coach
+        </button>
+
+        <!-- Coach info bar -->
+        <div id="coach-info-bar" class="coach-info-bar hidden">
+          <img id="coach-avatar" class="coach-avatar" src="" alt="Foto coach">
+          <div>
+            <div id="coach-name-bar" class="coach-name"></div>
+            <div id="coach-role-bar" class="coach-role"></div>
+          </div>
+        </div>
+
+        <!-- Step indicator -->
+        <div class="step-indicator" id="step-indicator">
+          <div class="step-item active" id="step-ind-1">
+            <div class="step-num"><span class="step-num-text">1</span></div>
+            <div class="step-label">Data</div>
+          </div>
+          <div class="step-line" id="step-line-1"></div>
+          <div class="step-item" id="step-ind-2">
+            <div class="step-num"><span class="step-num-text">2</span></div>
+            <div class="step-label">Orario</div>
+          </div>
+          <div class="step-line" id="step-line-2"></div>
+          <div class="step-item" id="step-ind-3">
+            <div class="step-num"><span class="step-num-text">3</span></div>
+            <div class="step-label">Dati</div>
+          </div>
+          <div class="step-line" id="step-line-3"></div>
+          <div class="step-item" id="step-ind-4">
+            <div class="step-num"><span class="step-num-text">4</span></div>
+            <div class="step-label">Conferma</div>
+          </div>
+        </div>
+
+        <!-- Global alert -->
+        <div id="global-alert" class="alert hidden"></div>
+
+        <!-- ── STEP 1 — Selezione data ── -->
+        <div id="step-1">
+          <div class="calendar-section">
+            <div class="step-section-title">Seleziona una data disponibile</div>
+            <div id="cal-days"></div>
+          </div>
+        </div>
+
+        <!-- ── STEP 2 — Selezione orario ── -->
+        <div id="step-2" class="hidden">
+          <div class="slots-section slide-up">
+            <div class="step-section-title">Seleziona un orario</div>
+            <div id="slots-date-label" class="slots-date-badge">
+              <span class="slots-date-badge-icon">&#128197;</span>
+              <span id="slots-date-label-text"></span>
+            </div>
+            <div id="slots-grid" class="slots-grid">
+              <div class="loading-overlay"><div class="spinner"></div></div>
+            </div>
+            <div class="mt-24">
+              <button class="btn btn-outline btn-sm" id="btn-back-to-cal">&#8592; Cambia data</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── STEP 3 — Form dati ── -->
+        <div id="step-3" class="hidden">
+          <div class="booking-form-wrapper slide-up">
+            <!-- Summary header bar -->
+            <div class="booking-summary-box">
+              <div class="summary-item">
+                <div class="summary-item-label">Coach</div>
+                <div class="summary-item-value" id="sum-coach">&#8211;</div>
+              </div>
+              <div class="summary-item">
+                <div class="summary-item-label">Data</div>
+                <div class="summary-item-value" id="sum-date">&#8211;</div>
+              </div>
+              <div class="summary-item">
+                <div class="summary-item-label">Orario</div>
+                <div class="summary-item-value" id="sum-time">&#8211;</div>
+              </div>
+            </div>
+
+            <!-- Form body -->
+            <div class="form-inner">
+              <form id="booking-form" novalidate>
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label for="f-name">Nome <span class="req">*</span></label>
+                    <input type="text" id="f-name" autocomplete="given-name" placeholder="Mario">
+                    <span class="field-error hidden" id="err-name"></span>
+                  </div>
+                  <div class="form-group">
+                    <label for="f-surname">Cognome <span class="req">*</span></label>
+                    <input type="text" id="f-surname" autocomplete="family-name" placeholder="Rossi">
+                    <span class="field-error hidden" id="err-surname"></span>
+                  </div>
+                  <div class="form-group">
+                    <label for="f-email">Email <span class="req">*</span></label>
+                    <input type="email" id="f-email" autocomplete="email" placeholder="mario@email.com">
+                    <span class="field-error hidden" id="err-email"></span>
+                  </div>
+                  <div class="form-group">
+                    <label for="f-phone">Telefono <span class="req">*</span></label>
+                    <input type="tel" id="f-phone" autocomplete="tel" placeholder="+39 320 000 0000">
+                    <span class="field-error hidden" id="err-phone"></span>
+                  </div>
+                  <div class="form-group full">
+                    <label for="f-notes">Note (opzionale)</label>
+                    <textarea id="f-notes" placeholder="Eventuali note o argomenti da affrontare..."></textarea>
+                  </div>
+                  <div class="privacy-group full">
+                    <div class="privacy-checkbox-wrap">
+                      <input type="checkbox" id="f-privacy">
+                      <span class="privacy-custom-check"></span>
+                    </div>
+                    <label class="privacy-text" for="f-privacy">
+                      Ho letto e accetto la <a href="#" target="_blank">Privacy Policy</a> e acconsento al trattamento dei miei dati personali. <span class="req">*</span>
+                    </label>
+                  </div>
+                  <span class="field-error hidden full" id="err-privacy"></span>
+                </div>
+
+                <div class="form-actions">
+                  <button type="button" class="btn btn-outline" id="btn-back-to-slots">&#8592; Cambia orario</button>
+                  <button type="submit" class="btn btn-primary" id="btn-submit">
+                    <span class="btn-submit-inner">
+                      <span id="btn-submit-text">Conferma prenotazione</span>
+                      <span id="btn-submit-spinner" class="spinner hidden" style="width:18px;height:18px;border-width:2px;border-top-color:#fff;border-color:rgba(255,255,255,.3)"></span>
+                    </span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── STEP 4 — Conferma ── -->
+        <div id="step-4" class="hidden">
+          <div class="confirmation-outer">
+            <div class="confirmation-box slide-up">
+
+              <!-- Animated SVG checkmark -->
+              <div class="confirmation-icon-wrap">
+                <svg class="conf-svg" viewBox="0 0 88 88" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <circle class="conf-bg-circle" cx="44" cy="44" r="44"/>
+                  <circle class="conf-circle" cx="44" cy="44" r="34"/>
+                  <polyline class="conf-check" points="28,44 39,56 60,34"/>
+                </svg>
+              </div>
+
+              <div class="confirmation-title">Prenotazione Confermata!</div>
+              <p class="confirmation-sub" id="conf-email-msg"></p>
+
+              <div class="confirmation-details">
+                <dl>
+                  <dt>Coach</dt>  <dd id="conf-coach">&#8211;</dd>
+                  <dt>Data</dt>   <dd id="conf-date">&#8211;</dd>
+                  <dt>Orario</dt> <dd id="conf-time">&#8211;</dd>
+                  <dt>Codice</dt> <dd><span id="conf-id">&#8211;</span></dd>
+                </dl>
+              </div>
+
+              <div class="alert alert-warning">
+                <span class="alert-icon">&#8505;</span>
+                <span>Puoi cancellare la prenotazione tramite il link ricevuto via email.</span>
+              </div>
+
+              <button class="btn btn-primary btn-full mt-16" onclick="wupShowCoaches()">
+                Prenota un'altra sessione
+              </button>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== SUPPORT POPUP ===== -->
+<button id="wup-help-btn" onclick="document.getElementById('wup-help-overlay').classList.add('open')" title="Hai bisogno di aiuto?">?</button>
+
+<div id="wup-help-overlay" onclick="if(event.target===this)this.classList.remove('open')">
+  <div id="wup-help-modal" role="dialog" aria-label="Come prenotare">
+    <div class="help-header">
+      <p class="help-title">Come prenotare la tua sessione</p>
+      <button class="help-close" onclick="document.getElementById('wup-help-overlay').classList.remove('open')" aria-label="Chiudi">&#x2715;</button>
+    </div>
+    <div class="help-body">
+      <div class="help-step">
+        <div class="help-step-num">1</div>
+        <div class="help-step-text"><strong>Scegli il tuo coach</strong>Scorri la lista e clicca "Prenota ora" sul coach che preferisci.</div>
+      </div>
+      <div class="help-step">
+        <div class="help-step-num">2</div>
+        <div class="help-step-text"><strong>Seleziona la data</strong>Scegli tra venerdì 13, sabato 14 o domenica 15 marzo. Le date verdi sono disponibili.</div>
+      </div>
+      <div class="help-step">
+        <div class="help-step-num">3</div>
+        <div class="help-step-text"><strong>Scegli l'orario</strong>Ogni sessione dura 20 minuti. Seleziona lo slot che preferisci.</div>
+      </div>
+      <div class="help-step">
+        <div class="help-step-num">4</div>
+        <div class="help-step-text"><strong>Inserisci i tuoi dati</strong>Compila nome, cognome, email e telefono, poi clicca Conferma.</div>
+      </div>
+      <div class="help-step">
+        <div class="help-step-num">5</div>
+        <div class="help-step-text"><strong>Controlla la email</strong>Riceverai una conferma con tutti i dettagli e il link per cancellare se necessario.</div>
+      </div>
+      <div class="help-divider"></div>
+      <div class="help-problem">
+        <div class="help-problem-title">&#x26A0; Problemi con il link di cancellazione?</div>
+        <div class="help-problem-text">Se il link di cancellazione nell'email non funziona da mobile, copia il link e aprilo dal browser (Chrome o Safari). In alternativa, contatta il tuo consulente WUP.</div>
+      </div>
+      <div class="help-problem">
+        <div class="help-problem-title">&#x2709; Non ricevi la email di conferma?</div>
+        <div class="help-problem-text">Controlla la cartella spam o posta indesiderata. Se non la trovi entro 10 minuti, contatta il tuo consulente WUP.</div>
+      </div>
+      <div class="help-problem">
+        <div class="help-problem-title">&#x23F0; Lo slot è già occupato?</div>
+        <div class="help-problem-text">Gli slot si esauriscono velocemente. Prova un orario diverso o un altro giorno disponibile.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+
+const API_URL = 'https://script.google.com/macros/s/AKfycbyRPpzCcN0h2kMyg6xKVMJroRZwQqYyxXtGmuaqtHh8BCVVQbHvT6DKjzJs0HrqFtyv/exec';
+const EVENT_DATES = ['2026-03-13', '2026-03-14', '2026-03-15'];
+
+const state = { coaches:[], selectedCoach:null, selectedDate:null, selectedSlot:null, summaryCache:{}, slotsCache:{} };
+
+window.wupShowCoaches = function() {
+  document.getElementById('wup-page-coaches').classList.remove('hidden');
+  document.getElementById('wup-page-booking').classList.add('hidden');
+  state.selectedCoach = null; state.selectedDate = null; state.selectedSlot = null;
+};
+window.wupShowBooking = function(coachId) {
+  const coach = state.coaches.find(c => String(c.id) === String(coachId));
+  if (!coach) return;
+  state.selectedCoach = coach;
+  document.getElementById('wup-page-coaches').classList.add('hidden');
+  document.getElementById('wup-page-booking').classList.remove('hidden');
+  initBookingPage(coach);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+function formatDateIT(dateStr) {
+  const g = ['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'];
+  const m = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+  const d = new Date(dateStr + 'T12:00:00');
+  return g[d.getDay()] + ' ' + d.getDate() + ' ' + m[d.getMonth()] + ' ' + d.getFullYear();
+}
+function formatTime(iso) { const d = new Date(iso); return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
+function formatDateShort(s) { if (!s) return ''; const [y,m,d] = s.split('-'); return d+'/'+m+'/'+y; }
+function truncate(str, n) { return !str ? '' : str.length > n ? str.substring(0,n)+'…' : str; }
+function setText(el, t) { if (el) el.textContent = t || ''; }
+function show(el) { if (el) el.classList.remove('hidden'); }
+function hide(el) { if (el) el.classList.add('hidden'); }
+function avatarFallback(name) {
+  const i = (name||'?').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  return 'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="88" height="88" viewBox="0 0 88 88"><rect width="88" height="88" rx="44" fill="#E57711"/><text x="44" y="58" font-family="Arial" font-size="30" font-weight="bold" fill="#fff" text-anchor="middle">'+i+'</text></svg>');
+}
+function showAlert(type, msg) {
+  const el = document.getElementById('global-alert'); if (!el) return;
+  el.className = 'alert alert-'+type;
+  const icons = {success:'✓',error:'✕',warning:'ℹ'};
+  el.innerHTML = '<span class="alert-icon">'+(icons[type]||'')+'</span><span></span>';
+  el.querySelector('span:last-child').textContent = msg; show(el);
+}
+function hideAlert() { hide(document.getElementById('global-alert')); }
+function showLoading(c, t) { c.innerHTML = '<div class="loading-overlay"><div class="spinner"></div><p class="loading-text">'+(t||'Caricamento...')+'</p></div>'; }
+
+async function fetchCoaches() {
+  const r = await fetch(API_URL+'?action=listCoaches');
+  const j = await r.json(); if (!j.success) throw new Error(j.error); return j.data.coaches;
+}
+async function fetchAvailabilitySummary(id, from, to) {
+  const r = await fetch(API_URL+'?action=getAvailabilitySummary&coach_id='+encodeURIComponent(id)+'&from_date='+encodeURIComponent(from)+'&to_date='+encodeURIComponent(to));
+  const j = await r.json(); if (!j.success) throw new Error(j.error); return j.data.dates;
+}
+async function fetchSlots(id, date) {
+  const r = await fetch(API_URL+'?action=getAvailability&coach_id='+encodeURIComponent(id)+'&date='+encodeURIComponent(date));
+  const j = await r.json(); if (!j.success) throw new Error(j.error); return j.data.slots;
+}
+async function createBooking(data) {
+  const r = await fetch(API_URL, {method:'POST',body:JSON.stringify({action:'createBooking',...data})});
+  return await r.json();
+}
+
+async function initIndexPage() {
+  const c = document.getElementById('coaches-container'); if (!c) return;
+  try {
+    showLoading(c, 'Caricamento coach...');
+    const coaches = await fetchCoaches();
+    state.coaches = coaches;
+    if (!coaches || !coaches.length) { c.innerHTML='<p style="text-align:center;color:#6b7280;padding:48px">Nessun coach disponibile.</p>'; return; }
+    renderCoaches(c, coaches);
+  } catch(e) { c.innerHTML='<div class="alert alert-error"><span class="alert-icon">✕</span><span>Impossibile caricare i coach. Riprova.</span></div>'; }
+}
+
+function renderCoaches(container, coaches) {
+  container.innerHTML = '';
+  const header = document.createElement('div'); header.className = 'section-header';
+  header.innerHTML = '<div class="section-title">I nostri Coach</div><div class="section-subtitle">Scegli il coach con cui desideri prenotare una sessione</div>';
+  container.appendChild(header);
+  const grid = document.createElement('div'); grid.className = 'coach-grid fade-in';
+  coaches.forEach(function(coach) {
+    const fullName = (coach.nome||'')+' '+(coach.cognome||'');
+    const card = document.createElement('div'); card.className = 'coach-card';
+
+    /* Card top */
+    const top = document.createElement('div'); top.className = 'coach-card-top';
+
+    /* Avatar wrapper */
+    const avatarWrap = document.createElement('div'); avatarWrap.className = 'coach-avatar-wrap';
+    const img = document.createElement('img'); img.className='coach-avatar'; img.alt=fullName; img.src=avatarFallback(fullName);
+    if (coach.foto_url) { const t=new Image(); t.onload=()=>{img.src=coach.foto_url;}; t.src=coach.foto_url; }
+    avatarWrap.appendChild(img);
+
+    const ne = document.createElement('div'); ne.className='coach-name'; ne.textContent=fullName.trim();
+    const re = document.createElement('div'); re.className='coach-role-tag'; re.textContent=coach.ruolo||'Coach';
+    top.appendChild(avatarWrap); top.appendChild(ne); top.appendChild(re);
+
+    /* Card body */
+    const body = document.createElement('div'); body.className='coach-card-body';
+    const bio = document.createElement('p'); bio.className='coach-bio'; bio.textContent=truncate(coach.bio||'',120);
+    const divider = document.createElement('div'); divider.className='coach-card-divider';
+    const btn = document.createElement('button'); btn.className='btn btn-primary btn-full'; btn.textContent='Prenota ora';
+    btn.addEventListener('click', function() { wupShowBooking(coach.id); });
+    body.appendChild(bio); body.appendChild(divider); body.appendChild(btn);
+
+    card.appendChild(top); card.appendChild(body); grid.appendChild(card);
+  });
+  container.appendChild(grid);
+}
+
+async function initBookingPage(coach) {
+  state.selectedDate = null; state.selectedSlot = null;
+  renderCoachInfoBar(coach);
+  await loadEventDatesSummary();
+  renderEventDates();
+  document.getElementById('btn-back-to-cal').onclick = function() { state.selectedSlot=null; showStep(1); };
+  document.getElementById('btn-back-to-slots').onclick = function() { showStep(2); };
+  document.getElementById('booking-form').onsubmit = async function(e) { e.preventDefault(); await submitBooking(); };
+  showStep(1);
+}
+
+function renderCoachInfoBar(coach) {
+  const bar = document.getElementById('coach-info-bar'); if (!bar) return;
+  const fn = (coach.nome||'')+' '+(coach.cognome||'');
+  setText(document.getElementById('coach-name-bar'), fn.trim());
+  setText(document.getElementById('coach-role-bar'), coach.ruolo||'Coach');
+  const img = document.getElementById('coach-avatar');
+  if (img) { img.src=avatarFallback(fn); if (coach.foto_url){const t=new Image();t.onload=()=>{img.src=coach.foto_url;};t.src=coach.foto_url;} }
+  show(bar);
+}
+
+async function loadEventDatesSummary() {
+  const id = state.selectedCoach.id;
+  if (!state.summaryCache[id]) state.summaryCache[id] = {};
+  EVENT_DATES.forEach(d => { if (state.summaryCache[id][d]===undefined) state.summaryCache[id][d]=null; });
+  try {
+    const s = await fetchAvailabilitySummary(id, EVENT_DATES[0], EVENT_DATES[EVENT_DATES.length-1]);
+    s.forEach(item => { state.summaryCache[id][item.date]=item.hasSlots; });
+  } catch(e) { EVENT_DATES.forEach(d => { state.summaryCache[id][d]=false; }); }
+}
+
+/* Helper: parse date parts for card rendering */
+function parseDateParts(dateStr) {
+  const weekdays = ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
+  const months = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+  const d = new Date(dateStr + 'T12:00:00');
+  return { weekday: weekdays[d.getDay()], day: d.getDate(), month: months[d.getMonth()], year: d.getFullYear() };
+}
+
+function renderEventDates() {
+  const c = document.getElementById('cal-days'); c.innerHTML='';
+  const id = state.selectedCoach.id; const cache = state.summaryCache[id]||{};
+  const list = document.createElement('div'); list.className = 'date-cards-list';
+
+  EVENT_DATES.forEach(function(dateStr) {
+    const has = cache[dateStr];
+    const parts = parseDateParts(dateStr);
+    const btn = document.createElement('button'); btn.type='button';
+
+    /* Build inner HTML for the premium card */
+    const dayNum  = '<div class="date-day-num">'+parts.day+'</div>';
+    let badgeHtml = '';
+    let stateClass = '';
+
+    if (has===null) {
+      stateClass = 'loading';
+      badgeHtml = '<div class="date-badge"><span class="date-badge-dot"></span>Verifica disponibilità...</div>';
+      btn.disabled = true;
+    } else if (has===true) {
+      stateClass = 'available' + (state.selectedDate===dateStr ? ' selected' : '');
+      badgeHtml = '<div class="date-badge"><span class="date-badge-dot"></span>Disponibile</div>';
+      btn.onclick = () => onDateSelected(dateStr);
+    } else {
+      stateClass = 'unavailable';
+      badgeHtml = '<div class="date-badge"><span class="date-badge-dot"></span>Non disponibile</div>';
+      btn.disabled = true;
+    }
+
+    btn.className = 'date-event-btn ' + stateClass;
+    btn.innerHTML =
+      dayNum +
+      '<div class="date-info">' +
+        '<div class="date-weekday">' + parts.weekday + '</div>' +
+        '<div class="date-monthyear">' + parts.month + ' ' + parts.year + '</div>' +
+        badgeHtml +
+      '</div>';
+
+    list.appendChild(btn);
+  });
+  c.appendChild(list);
+}
+
+async function onDateSelected(dateStr) {
+  state.selectedDate=dateStr; renderEventDates(); showStep(2);
+  /* Update slots date label */
+  const labelEl = document.getElementById('slots-date-label-text');
+  if (labelEl) labelEl.textContent = formatDateIT(dateStr);
+  /* Also update the wrapper for back-compat (original referenced slots-date-label) */
+  const legacyLabel = document.getElementById('slots-date-label');
+  if (legacyLabel) legacyLabel.setAttribute('data-date', dateStr);
+  const sg = document.getElementById('slots-grid'); showLoading(sg,'Caricamento orari...');
+  try {
+    const key=state.selectedCoach.id+'_'+dateStr;
+    let slots=state.slotsCache[key];
+    if (!slots) { slots=await fetchSlots(state.selectedCoach.id, dateStr); state.slotsCache[key]=slots; }
+    renderSlots(sg, slots, dateStr);
+  } catch(e) { sg.innerHTML='<div class="alert alert-error"><span>Impossibile caricare gli orari.</span></div>'; }
+}
+
+function renderSlots(container, slots, dateStr) {
+  container.innerHTML='';
+  if (!slots||!slots.length) {
+    container.innerHTML='<div class="alert alert-warning"><span class="alert-icon">ℹ</span><span>Nessuno slot disponibile per questa data.</span></div>';
+    if (state.selectedCoach){const c=state.summaryCache[state.selectedCoach.id];if(c)c[dateStr]=false;}
+    return;
+  }
+  slots.forEach(function(slot) {
+    const chip=document.createElement('button'); chip.type='button'; chip.className='slot-chip';
+    chip.textContent=formatTime(slot.start);
+    if (state.selectedSlot&&state.selectedSlot.start===slot.start) chip.classList.add('selected');
+    chip.onclick=function() { document.querySelectorAll('#wup-app .slot-chip').forEach(c=>c.classList.remove('selected')); chip.classList.add('selected'); onSlotSelected(slot); };
+    container.appendChild(chip);
+  });
+}
+
+function onSlotSelected(slot) {
+  state.selectedSlot=slot;
+  const fn=(state.selectedCoach.nome||'')+' '+(state.selectedCoach.cognome||'');
+  setText(document.getElementById('sum-coach'), fn.trim());
+  setText(document.getElementById('sum-date'), formatDateShort(state.selectedDate));
+  setText(document.getElementById('sum-time'), formatTime(slot.start));
+  showStep(3);
+}
+
+function validateForm() {
+  const fields=['name','surname','email','phone'], labels={name:'Nome',surname:'Cognome',email:'Email',phone:'Telefono'};
+  let valid=true;
+  fields.forEach(function(f) {
+    const input=document.getElementById('f-'+f), errEl=document.getElementById('err-'+f);
+    const val=input?input.value.trim():'';
+    hide(errEl); input&&input.classList.remove('error');
+    if (!val) { if(errEl){errEl.textContent=labels[f]+' è obbligatorio.';show(errEl);} if(input)input.classList.add('error'); valid=false; }
+    else if (f==='email'&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) { if(errEl){errEl.textContent='Email non valida.';show(errEl);} if(input)input.classList.add('error'); valid=false; }
+  });
+  const pr=document.getElementById('f-privacy'), ep=document.getElementById('err-privacy');
+  hide(ep); if(pr&&!pr.checked){if(ep){ep.textContent='Devi accettare la privacy policy.';show(ep);}valid=false;}
+  return valid;
+}
+
+async function submitBooking() {
+  hideAlert(); if (!validateForm()) return;
+  const sb=document.getElementById('btn-submit'), bt=document.getElementById('btn-submit-text'), bs=document.getElementById('btn-submit-spinner');
+  sb.disabled=true; hide(bt); show(bs);
+  const data={
+    coach_id:state.selectedCoach.id, start_datetime:state.selectedSlot.start,
+    client_name:document.getElementById('f-name').value.trim(),
+    client_surname:document.getElementById('f-surname').value.trim(),
+    client_email:document.getElementById('f-email').value.trim(),
+    client_phone:document.getElementById('f-phone').value.trim(),
+    notes:document.getElementById('f-notes').value.trim(),
+    privacy_consent:document.getElementById('f-privacy').checked
+  };
+  try {
+    const result=await createBooking(data);
+    if (result.success) {
+      const fn=(state.selectedCoach.nome||'')+' '+(state.selectedCoach.cognome||'');
+      setText(document.getElementById('conf-coach'), fn.trim());
+      setText(document.getElementById('conf-date'), formatDateIT(state.selectedDate));
+      setText(document.getElementById('conf-time'), formatTime(state.selectedSlot.start));
+      setText(document.getElementById('conf-id'), result.data.booking_id||'');
+      setText(document.getElementById('conf-email-msg'), 'Riceverai una email di conferma all\'indirizzo '+data.client_email);
+      showStep(4);
+    } else {
+      if (result.code==='SLOT_NOT_AVAILABLE') { showAlert('error','Slot già prenotato. Seleziona un altro orario.'); showStep(2); delete state.slotsCache[state.selectedCoach.id+'_'+state.selectedDate]; state.selectedSlot=null; }
+      else showAlert('error', result.error||'Errore durante la prenotazione. Riprova.');
+    }
+  } catch(e) { showAlert('error','Errore di connessione. Riprova.'); }
+  finally { sb.disabled=false; show(bt); hide(bs); }
+}
+
+function showStep(n) {
+  for (let i=1;i<=4;i++) {
+    const el=document.getElementById('step-'+i), ind=document.getElementById('step-ind-'+i), line=document.getElementById('step-line-'+i);
+    if(el)(i===n?show(el):hide(el));
+    if(ind){ind.classList.remove('active','done');if(i<n)ind.classList.add('done');if(i===n)ind.classList.add('active');}
+    if(line){line.classList.remove('done');if(i<n)line.classList.add('done');}
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+initIndexPage();
+})();
+</script>

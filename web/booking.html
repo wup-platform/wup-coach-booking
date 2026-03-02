@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WUP Coach Booking – Prenota</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header>
+    <div class="container header-inner">
+      <div>
+        <div class="logo">WUP</div>
+        <div class="logo-subtitle">Coach Booking Platform</div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+
+      <a href="index.html" class="back-link">&#8592; Torna ai coach</a>
+
+      <!-- Info coach -->
+      <div id="coach-info-bar" class="coach-info-bar hidden">
+        <img id="coach-avatar" class="coach-avatar" src="" alt="Foto coach">
+        <div>
+          <div id="coach-name-bar" class="coach-name"></div>
+          <div id="coach-role-bar" class="coach-role"></div>
+        </div>
+      </div>
+
+      <!-- Step indicator -->
+      <div class="step-indicator" id="step-indicator">
+        <div class="step-item active" id="step-ind-1">
+          <div class="step-num">1</div>
+          <div class="step-label">Data</div>
+        </div>
+        <div class="step-line" id="step-line-1"></div>
+        <div class="step-item" id="step-ind-2">
+          <div class="step-num">2</div>
+          <div class="step-label">Orario</div>
+        </div>
+        <div class="step-line" id="step-line-2"></div>
+        <div class="step-item" id="step-ind-3">
+          <div class="step-num">3</div>
+          <div class="step-label">Dati</div>
+        </div>
+        <div class="step-line" id="step-line-3"></div>
+        <div class="step-item" id="step-ind-4">
+          <div class="step-num">4</div>
+          <div class="step-label">Conferma</div>
+        </div>
+      </div>
+
+      <!-- Alert globale -->
+      <div id="global-alert" class="alert hidden"></div>
+
+      <!-- ======================== STEP 1: Calendario ======================== -->
+      <div id="step-1">
+        <div class="calendar-section">
+          <div class="calendar-section-title">Seleziona una data disponibile</div>
+          <div class="calendar-wrapper">
+            <div class="calendar-header">
+              <button class="calendar-nav" id="cal-prev" aria-label="Mese precedente">&#8249;</button>
+              <span class="calendar-month-label" id="cal-month-label"></span>
+              <button class="calendar-nav" id="cal-next" aria-label="Mese successivo">&#8250;</button>
+            </div>
+            <div class="calendar-grid" id="cal-grid">
+              <!-- Giorni della settimana -->
+              <div class="calendar-dow">Lun</div>
+              <div class="calendar-dow">Mar</div>
+              <div class="calendar-dow">Mer</div>
+              <div class="calendar-dow">Gio</div>
+              <div class="calendar-dow">Ven</div>
+              <div class="calendar-dow">Sab</div>
+              <div class="calendar-dow">Dom</div>
+            </div>
+            <div id="cal-days"></div>
+          </div>
+
+          <div class="mt-16" style="font-size:.85rem;color:var(--gray-text);display:flex;gap:16px;flex-wrap:wrap;">
+            <span style="display:flex;align-items:center;gap:6px;">
+              <span style="width:14px;height:14px;background:#e8fdf0;border-radius:3px;display:inline-block"></span>
+              Disponibile
+            </span>
+            <span style="display:flex;align-items:center;gap:6px;">
+              <span style="width:14px;height:14px;background:var(--accent);border-radius:3px;display:inline-block"></span>
+              Selezionato
+            </span>
+            <span style="display:flex;align-items:center;gap:6px;">
+              <span style="width:14px;height:14px;background:var(--gray-light);border-radius:3px;display:inline-block"></span>
+              Non disponibile
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================== STEP 2: Slot orari ======================== -->
+      <div id="step-2" class="hidden">
+        <div class="slots-section slide-up">
+          <div class="slots-section-title">Seleziona un orario</div>
+          <div id="slots-date-label" class="slots-date-label"></div>
+          <div id="slots-grid" class="slots-grid">
+            <div class="loading-overlay">
+              <div class="spinner"></div>
+            </div>
+          </div>
+          <div class="mt-24">
+            <button class="btn btn-outline btn-sm" id="btn-back-to-cal">&#8592; Cambia data</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================== STEP 3: Form ======================== -->
+      <div id="step-3" class="hidden">
+        <div class="booking-form-wrapper slide-up">
+
+          <!-- Riepilogo selezione -->
+          <div class="booking-summary-box" id="booking-summary">
+            <div class="summary-item">
+              <div class="summary-item-label">Coach</div>
+              <div class="summary-item-value" id="sum-coach">–</div>
+            </div>
+            <div class="summary-item">
+              <div class="summary-item-label">Data</div>
+              <div class="summary-item-value" id="sum-date">–</div>
+            </div>
+            <div class="summary-item">
+              <div class="summary-item-label">Orario</div>
+              <div class="summary-item-value" id="sum-time">–</div>
+            </div>
+          </div>
+
+          <form id="booking-form" novalidate>
+            <div class="form-grid">
+
+              <div class="form-group">
+                <label for="f-name">Nome <span class="req">*</span></label>
+                <input type="text" id="f-name" name="client_name" autocomplete="given-name" placeholder="Mario">
+                <span class="field-error hidden" id="err-name"></span>
+              </div>
+
+              <div class="form-group">
+                <label for="f-surname">Cognome <span class="req">*</span></label>
+                <input type="text" id="f-surname" name="client_surname" autocomplete="family-name" placeholder="Rossi">
+                <span class="field-error hidden" id="err-surname"></span>
+              </div>
+
+              <div class="form-group">
+                <label for="f-email">Email <span class="req">*</span></label>
+                <input type="email" id="f-email" name="client_email" autocomplete="email" placeholder="mario@email.com">
+                <span class="field-error hidden" id="err-email"></span>
+              </div>
+
+              <div class="form-group">
+                <label for="f-phone">Telefono <span class="req">*</span></label>
+                <input type="tel" id="f-phone" name="client_phone" autocomplete="tel" placeholder="+39 320 000 0000">
+                <span class="field-error hidden" id="err-phone"></span>
+              </div>
+
+              <div class="form-group full">
+                <label for="f-notes">Note (opzionale)</label>
+                <textarea id="f-notes" name="notes" placeholder="Scrivi qui eventuali note o argomenti che vuoi affrontare nella sessione..."></textarea>
+              </div>
+
+              <div class="privacy-group">
+                <input type="checkbox" id="f-privacy" name="privacy_consent">
+                <label class="privacy-text" for="f-privacy">
+                  Ho letto e accetto la <a href="#" target="_blank">Privacy Policy</a>.
+                  Acconsento al trattamento dei miei dati personali per la gestione della prenotazione.
+                  <span class="req">*</span>
+                </label>
+              </div>
+              <span class="field-error hidden full" id="err-privacy"></span>
+
+            </div><!-- /.form-grid -->
+
+            <div class="mt-24" style="display:flex;gap:12px;flex-wrap:wrap;">
+              <button type="button" class="btn btn-outline" id="btn-back-to-slots">&#8592; Cambia orario</button>
+              <button type="submit" class="btn btn-primary" id="btn-submit">
+                <span id="btn-submit-text">Conferma prenotazione</span>
+                <span id="btn-submit-spinner" class="spinner hidden" style="width:18px;height:18px;border-width:3px"></span>
+              </button>
+            </div>
+
+          </form>
+        </div>
+      </div>
+
+      <!-- ======================== STEP 4: Conferma ======================== -->
+      <div id="step-4" class="hidden">
+        <div class="confirmation-box slide-up">
+          <div class="confirmation-icon">&#10003;</div>
+          <div class="confirmation-title">Prenotazione confermata!</div>
+          <p class="confirmation-sub" id="conf-email-msg"></p>
+
+          <div class="confirmation-details">
+            <dl>
+              <dt>Coach</dt>    <dd id="conf-coach">–</dd>
+              <dt>Data</dt>     <dd id="conf-date">–</dd>
+              <dt>Orario</dt>   <dd id="conf-time">–</dd>
+              <dt>Codice</dt>   <dd id="conf-id">–</dd>
+            </dl>
+          </div>
+
+          <div class="alert alert-warning">
+            <span class="alert-icon">&#8505;</span>
+            <span>Puoi cancellare la prenotazione tramite il link ricevuto via email.</span>
+          </div>
+
+          <a href="index.html" class="btn btn-primary btn-full mt-16">Prenota un'altra sessione</a>
+        </div>
+      </div>
+
+    </div><!-- /.container -->
+  </main>
+
+  <footer>
+    <p>&copy; <span id="year"></span> WUP Coach Booking Platform</p>
+  </footer>
+
+  <script src="app.js"></script>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
