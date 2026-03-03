@@ -110,7 +110,7 @@ function sendCancellationToClient(bookingData, coach) {
       _tr('Codice', String(bookingData.booking_id), false),
       '</table>',
       '<hr>',
-      '<p><a href="' + APP_URL + '" style="background:#3498db;color:#fff;padding:10px 20px;text-decoration:none;border-radius:4px;">Prenota una nuova sessione</a></p>'
+      '<p><a href="https://lp.alfiobardolla.com/prenotazione-wup/" style="background:#3498db;color:#fff;padding:10px 20px;text-decoration:none;border-radius:4px;">Prenota una nuova sessione</a></p>'
     ].join('');
 
     GmailApp.sendEmail(

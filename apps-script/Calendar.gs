@@ -42,7 +42,7 @@ function getAvailableSlots(coach, dateStr) {
         });
       }
 
-      slotStart = new Date(slotEnd);
+      slotStart = new Date(slotEnd.getTime() + SLOT_BREAK_MIN * 60 * 1000);
     }
 
     return availableSlots;

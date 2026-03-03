@@ -24,8 +24,11 @@ const APP_URL = 'https://script.google.com/macros/s/AKfycbyRPpzCcN0h2kMyg6xKVMJr
 // Fuso orario di riferimento per tutti i calcoli di data/ora
 const TIMEZONE = 'Europe/Rome';
 
-// Durata default di uno slot in minuti (usata se il coach non ha un valore specifico)
-const SLOT_DURATION_DEFAULT_MIN = 20;
+// Durata della sessione in minuti (usata se il coach non ha un valore specifico)
+const SLOT_DURATION_DEFAULT_MIN = 15;
+
+// Pausa tra una sessione e la successiva (minuti)
+const SLOT_BREAK_MIN = 5;
 
 // Date dell'evento (formato YYYY-MM-DD) – solo questi giorni sono prenotabili
 const EVENT_DATE_START = '2026-03-13';
