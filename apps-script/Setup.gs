@@ -288,7 +288,7 @@ function generateDashboardTokens() {
   const colCognome = headers.indexOf('cognome');
   const colActive  = headers.indexOf('active');
 
-  const DASHBOARD_BASE_URL = 'https://lucasammarco-lab.github.io/wup-coach-dashboard/coach.html';
+  const DASHBOARD_BASE_URL = 'https://wup-platform.github.io/wup-coach-dashboard/coach.html';
   const urlList = [];
   let generati = 0;
 

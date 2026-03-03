@@ -386,7 +386,7 @@ function handleGetCoachLinks(params) {
     const colActive  = headers.indexOf('active');
     const colToken   = headers.indexOf('dashboard_token');
 
-    const BASE = 'https://lucasammarco-lab.github.io/wup-coach-dashboard/coach.html';
+    const BASE = 'https://wup-platform.github.io/wup-coach-dashboard/coach.html';
     const coaches = [];
 
     for (let i = 1; i < data.length; i++) {
