@@ -172,7 +172,7 @@ function syncCoaches() {
     ['coach_026','Carlo','Cuoco','carlo.cuoco@alfiobardolla.com','Coach','','','DA_INSERIRE','09:00','18:00',20,'TRUE'],
     ['coach_027','Paolo','Lavorenti','paolo.lavorenti@alfiobardolla.com','Coach','','','DA_INSERIRE','09:00','18:00',20,'TRUE'],
     ['coach_028','Clara','Nicoloso','clara.nicoloso@alfiobardolla.com','Coach','','','DA_INSERIRE','09:00','18:00',20,'TRUE'],
-    ['coach_029','Emanuele','Salvato','emanuele.salvato@alfiobardolla.com','Mentor','','','DA_INSERIRE','09:00','18:00',20,'TRUE'],
+    ['coach_029','Emanuele','Salvato','emanuele.salvato@smartbusinesslab.com','Mentor','','','DA_INSERIRE','09:00','18:00',20,'TRUE'],
   ];
 
   let aggiunti = 0;
@@ -301,20 +301,29 @@ function generateDashboardTokens() {
     const nome     = String(row[colNome]);
     const cognome  = String(row[colCognome]);
 
-    // Genera sempre un nuovo token (sovrascrive eventuale precedente)
-    const token = generateToken();
-    sheet.getRange(i + 1, colToken + 1).setValue(token);
+    // Salta se il token esiste già (per evitare rinnovo accidentale)
+    const existingToken = String(row[colToken] !== undefined ? row[colToken] : '').trim();
+    let token;
+    if (existingToken.length > 0) {
+      token = existingToken;
+      Logger.log('[SKIP] Token già presente per ' + coachId);
+    } else {
+      token = generateToken();
+      sheet.getRange(i + 1, colToken + 1).setValue(token);
+    }
 
     const url = DASHBOARD_BASE_URL + '?id=' + encodeURIComponent(coachId) + '&token=' + token;
     urlList.push({ coachId: coachId, nome: nome + ' ' + cognome, url: url });
 
-    // Invia email al coach con il proprio link
-    const coach = _rowToCoachFromRow(headers, row);
-    coach.dashboard_token = token;
-    try {
-      sendDashboardLinkToCoach(coach, url);
-    } catch (e) {
-      Logger.log('[WARN] Email non inviata a ' + coach.email + ': ' + e.message);
+    // Invia email al coach solo se il token è nuovo
+    if (existingToken.length === 0) {
+      const coach = _rowToCoachFromRow(headers, row);
+      coach.dashboard_token = token;
+      try {
+        sendDashboardLinkToCoach(coach, url);
+      } catch (e) {
+        Logger.log('[WARN] Email non inviata a ' + coach.email + ': ' + e.message);
+      }
     }
 
     generati++;
@@ -349,6 +358,162 @@ function _rowToCoachFromRow(headers, row) {
   const coach = {};
   headers.forEach(function(h, i) { coach[h] = row[i]; });
   return coach;
+}
+
+/**
+ * Copia il Google Spreadsheet su Google Drive nella cartella 'WUP Coach Backup'.
+ * Nomina il file con la data odierna: "WUP Backup YYYY-MM-DD".
+ * Configurare come trigger giornaliero con setupDailyBackupTrigger().
+ */
+function backupBookingsToGoogleDrive() {
+  try {
+    const today      = new Date();
+    const dateStr    = Utilities.formatDate(today, TIMEZONE, 'yyyy-MM-dd');
+    const fileName   = 'WUP Backup ' + dateStr;
+    const folderName = 'WUP Coach Backup';
+
+    // Trova o crea la cartella di backup
+    let folder;
+    const folders = DriveApp.getFoldersByName(folderName);
+    if (folders.hasNext()) {
+      folder = folders.next();
+    } else {
+      folder = DriveApp.createFolder(folderName);
+      Logger.log('[BACKUP] Cartella creata: ' + folderName);
+    }
+
+    // Evita backup duplicati per la stessa data
+    const existing = folder.getFilesByName(fileName);
+    if (existing.hasNext()) {
+      Logger.log('[BACKUP] Backup già presente per ' + dateStr + ', skip.');
+      return;
+    }
+
+    // Copia lo spreadsheet nella cartella
+    const file = DriveApp.getFileById(SPREADSHEET_ID);
+    file.makeCopy(fileName, folder);
+
+    Logger.log('[BACKUP] Backup completato: ' + fileName);
+    logAudit(LOG_LEVEL.INFO, 'BACKUP', '', 'Backup giornaliero completato: ' + fileName, {});
+  } catch (err) {
+    Logger.log('[BACKUP] ERRORE: ' + err.message);
+    logAudit(LOG_LEVEL.ERROR, 'BACKUP', '', err.message, {});
+    sendAdminAlert('Errore backup giornaliero', err.message);
+  }
+}
+
+/**
+ * Crea un trigger giornaliero alle 03:00 per backupBookingsToGoogleDrive().
+ * Eseguire UNA SOLA VOLTA dall'editor Apps Script.
+ */
+function setupDailyBackupTrigger() {
+  // Evita trigger duplicati
+  const triggers = ScriptApp.getProjectTriggers();
+  for (let i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'backupBookingsToGoogleDrive') {
+      Logger.log('[TRIGGER] Trigger backup già esistente, skip.');
+      SpreadsheetApp.getUi().alert('Trigger backup già presente. Nessuna modifica.');
+      return;
+    }
+  }
+
+  ScriptApp.newTrigger('backupBookingsToGoogleDrive')
+    .timeBased()
+    .atHour(3)
+    .everyDays(1)
+    .create();
+
+  Logger.log('[TRIGGER] Trigger backup giornaliero creato alle 03:00.');
+  SpreadsheetApp.getUi().alert('Trigger backup creato!\nBackup automatico ogni giorno alle 03:00.');
+}
+
+/**
+ * Esporta tutte le prenotazioni (Bookings) come CSV e invia all'ADMIN_EMAIL.
+ * Esclude le colonne sensibili: cancel_token.
+ * Eseguire manualmente dall'editor Apps Script quando serve un export.
+ */
+function exportBookingsCSV() {
+  try {
+    const ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = ss.getSheetByName(SHEETS.BOOKINGS);
+    const data  = sheet.getDataRange().getValues();
+
+    if (data.length === 0) {
+      Logger.log('[EXPORT] Nessun dato da esportare.');
+      return;
+    }
+
+    const headers     = data[0];
+    const excludeCols = ['cancel_token'];
+    const keepCols    = [];
+    headers.forEach(function(h, i) {
+      if (excludeCols.indexOf(h) === -1) keepCols.push(i);
+    });
+
+    // Costruisci CSV con escaping corretto
+    const csvRows = data.map(function(row) {
+      return keepCols.map(function(ci) {
+        const val = row[ci] !== null && row[ci] !== undefined ? String(row[ci]) : '';
+        if (val.indexOf(',') !== -1 || val.indexOf('\n') !== -1 || val.indexOf('"') !== -1) {
+          return '"' + val.replace(/"/g, '""') + '"';
+        }
+        return val;
+      }).join(',');
+    });
+
+    const csvContent = csvRows.join('\n');
+    const dateStr    = Utilities.formatDate(new Date(), TIMEZONE, 'yyyy-MM-dd_HHmm');
+    const fileName   = 'WUP_Bookings_Export_' + dateStr + '.csv';
+    const blob       = Utilities.newBlob(csvContent, 'text/csv', fileName);
+
+    GmailApp.sendEmail(
+      ADMIN_EMAIL,
+      '[WUP] Export prenotazioni ' + dateStr,
+      'In allegato l\'export completo delle prenotazioni WUP Coach Booking.\n\nTotale righe (inclusa intestazione): ' + data.length,
+      { from: SENDER_EMAIL, name: SENDER_NAME, attachments: [blob] }
+    );
+
+    Logger.log('[EXPORT] CSV inviato ad ' + ADMIN_EMAIL + ': ' + data.length + ' righe.');
+    SpreadsheetApp.getUi().alert('Export completato!\n' + (data.length - 1) + ' prenotazioni inviate via email a ' + ADMIN_EMAIL);
+  } catch (err) {
+    Logger.log('[EXPORT] ERRORE: ' + err.message);
+    SpreadsheetApp.getUi().alert('ERRORE export: ' + err.message);
+  }
+}
+
+/**
+ * Protegge il foglio Coaches: solo ADMIN_EMAIL può modificarlo.
+ * Gli altri utenti possono visualizzare ma non modificare.
+ * Eseguire UNA SOLA VOLTA dall'editor Apps Script.
+ */
+function protectCoachesSheet() {
+  try {
+    const ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = ss.getSheetByName(SHEETS.COACHES);
+
+    // Rimuovi protezioni esistenti
+    const existing = sheet.getProtections(SpreadsheetApp.ProtectionType.SHEET);
+    existing.forEach(function(p) { p.remove(); });
+
+    const protection = sheet.protect();
+    protection.setDescription('Foglio Coaches — solo admin WUP');
+
+    // Rimuovi tutti gli editor eccetto il proprietario del progetto
+    protection.removeEditors(protection.getEditors());
+
+    // Aggiungi admin come editor esplicito
+    protection.addEditor(ADMIN_EMAIL);
+
+    Logger.log('[PROTECT] Foglio Coaches protetto. Editor: ' + ADMIN_EMAIL);
+    SpreadsheetApp.getUi().alert(
+      'Foglio Coaches protetto!\n' +
+      'Solo ' + ADMIN_EMAIL + ' può modificarlo.\n' +
+      'Gli altri utenti possono solo visualizzarlo.'
+    );
+  } catch (err) {
+    Logger.log('[PROTECT] ERRORE: ' + err.message);
+    SpreadsheetApp.getUi().alert('ERRORE protezione: ' + err.message);
+  }
 }
 
 function _applyHeaders(sheet, headers) {
