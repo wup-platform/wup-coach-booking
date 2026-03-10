@@ -52,6 +52,7 @@ function doPost(e) {
       case 'getAvailabilitySummary':  return handleGetAvailabilitySummary(params);
       case 'adminCancelBooking':      return handleAdminCancelBooking(params);
       case 'updateBookingOutcome':    return handleUpdateBookingOutcome(params);
+      case 'updateSalesforceFlag':   return handleUpdateSalesforceFlag(params);
       default:
         return errorResponse('Action non riconosciuta: ' + action, 'UNKNOWN_ACTION');
     }
@@ -129,13 +130,13 @@ function _buildCancelPageResponse(token, apiResult) {
       '.brand{color:#aaa;font-size:11px;margin-top:20px;padding-top:16px;border-top:1px solid #f0f0f0}' +
       '</style></head>' +
       '<body><div class="card">' +
-      '<div class="card-header"><div class="logo">WUP</div><div class="logo-sub">Coach Booking Platform</div></div>' +
+      '<div class="card-header"><div class="logo">Wake Up Call</div><div class="logo-sub">Coach Booking Platform</div></div>' +
       '<div class="card-body">' +
       '<div class="icon-circle">' + icon + '</div>' +
       '<h1>' + title + '</h1>' +
       '<p class="msg">' + message + '</p>' +
       '<a href="https://lp.alfiobardolla.com/prenotazione-wup/" class="btn">Prenota una nuova sessione</a>' +
-      '<p class="brand">&copy; ' + new Date().getFullYear() + ' WUP Coach Booking — ABTG</p>' +
+      '<p class="brand">&copy; ' + new Date().getFullYear() + ' Wake Up Call Coach Booking — ABTG</p>' +
       '</div></div></body></html>';
 
     return HtmlService.createHtmlOutput(html).setTitle(title)
@@ -153,14 +154,14 @@ function _buildWelcomePage() {
     '.ep{background:#0f3460;border-radius:6px;padding:8px 14px;margin:6px 0;font-family:monospace;font-size:13px;color:#7fdbff}' +
     '.ep span{color:#a0a0c0;font-family:sans-serif;font-size:11px;display:block;margin-top:2px}' +
     '.footer{margin-top:40px;color:#555;font-size:12px}</style></head>' +
-    '<body><div class="logo">WUP</div><div class="subtitle">Coach Booking Platform</div>' +
+    '<body><div class="logo">Wake Up Call</div><div class="subtitle">Coach Booking Platform</div>' +
     '<div class="box"><h2>Sistema operativo &#10003;</h2>' +
     '<div class="ep">GET ?action=listCoaches<span>Lista coach attivi</span></div>' +
     '<div class="ep">GET ?action=getAvailability&amp;coach_id=X&amp;date=YYYY-MM-DD<span>Slot disponibili</span></div>' +
     '<div class="ep">GET ?action=getAvailabilitySummary&amp;coach_id=X&amp;from_date=...&amp;to_date=...<span>Riepilogo mese</span></div>' +
     '<div class="ep">GET ?action=cancel&amp;token=TOKEN<span>Cancellazione via link email</span></div>' +
     '<div class="ep">POST {action:"createBooking",...}<span>Crea prenotazione</span></div>' +
-    '</div><div class="footer">&copy; ' + new Date().getFullYear() + ' WUP Coach Booking</div></body></html>';
+    '</div><div class="footer">&copy; ' + new Date().getFullYear() + ' Wake Up Call Coach Booking</div></body></html>';
 
   return HtmlService.createHtmlOutput(html).setTitle(APP_NAME)
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);

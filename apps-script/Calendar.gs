@@ -92,10 +92,10 @@ function createCalendarEvent(coach, bookingData) {
     const clientFullName = bookingData.client_name + ' ' + bookingData.client_surname;
     const durataMin     = Math.round((endDate - startDate) / 60000);
 
-    const title = 'WUP – ' + clientFullName + ' con ' + coachFullName.trim();
+    const title = 'Wake Up Call – ' + clientFullName + ' con ' + coachFullName.trim();
 
     const description = [
-      '=== PRENOTAZIONE WUP COACH BOOKING ===',
+      '=== PRENOTAZIONE WAKE UP CALL COACH BOOKING ===',
       'Booking ID: ' + bookingData.booking_id,
       'Cliente: ' + clientFullName,
       'Email cliente: ' + bookingData.client_email,

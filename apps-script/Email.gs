@@ -22,7 +22,6 @@ function sendBookingConfirmationToClient(bookingData, coach) {
       _tr('Data e ora', formatDateItalian(startDate), false),
       _tr('Durata', durataMin + ' minuti', true),
       _tr('Codice prenotazione', bookingData.booking_id, false),
-      bookingData.notes ? _tr('Note', sanitizeString(bookingData.notes), true) : '',
       '</table>',
       '<hr>',
       '<p>Riceverai un invito nel tuo calendario Google.</p>',
@@ -33,12 +32,12 @@ function sendBookingConfirmationToClient(bookingData, coach) {
 
     GmailApp.sendEmail(
       bookingData.client_email,
-      'Confermata la tua sessione WUP con ' + coachFullName.trim(),
+      'Prenotazione Coaching Confermata – ' + coachFullName.trim(),
       '',
       {
         from:     SENDER_EMAIL,
         name:     SENDER_NAME,
-        htmlBody: buildEmailTemplate('Prenotazione confermata', bodyHtml)
+        htmlBody: buildEmailTemplate('Prenotazione Coaching Confermata', bodyHtml)
       }
     );
 
@@ -60,7 +59,7 @@ function sendBookingNotificationToCoach(bookingData, coach) {
 
     const bodyHtml = [
       '<p>Ciao <strong>' + sanitizeString(coachFullName.trim()) + '</strong>,</p>',
-      '<p>hai una nuova prenotazione WUP.</p>',
+      '<p>hai una nuova prenotazione Wake Up Call.</p>',
       '<hr>',
       '<table style="border-collapse:collapse;width:100%">',
       _tr('Cliente', sanitizeString(clientFullName), false),
@@ -77,7 +76,7 @@ function sendBookingNotificationToCoach(bookingData, coach) {
 
     GmailApp.sendEmail(
       coach.email,
-      'Nuova prenotazione WUP: ' + clientFullName + ' – ' +
+      'Nuova prenotazione Wake Up Call: ' + clientFullName + ' – ' +
         Utilities.formatDate(startDate, TIMEZONE, 'dd/MM/yyyy'),
       '',
       {
@@ -115,12 +114,12 @@ function sendCancellationToClient(bookingData, coach) {
 
     GmailApp.sendEmail(
       bookingData.client_email,
-      'Prenotazione WUP cancellata – ' + Utilities.formatDate(startDate, TIMEZONE, 'dd/MM/yyyy'),
+      'Prenotazione Coaching Cancellata – ' + Utilities.formatDate(startDate, TIMEZONE, 'dd/MM/yyyy'),
       '',
       {
         from:     SENDER_EMAIL,
         name:     SENDER_NAME,
-        htmlBody: buildEmailTemplate('Prenotazione cancellata', bodyHtml)
+        htmlBody: buildEmailTemplate('Prenotazione Coaching Cancellata', bodyHtml)
       }
     );
   } catch (err) {
@@ -154,7 +153,7 @@ function sendCancellationToCoach(bookingData, coach) {
       {
         from:     SENDER_EMAIL,
         name:     SENDER_NAME,
-        htmlBody: buildEmailTemplate('Prenotazione cancellata', bodyHtml)
+        htmlBody: buildEmailTemplate('Prenotazione Coaching Cancellata', bodyHtml)
       }
     );
   } catch (err) {
@@ -170,12 +169,12 @@ function sendAdminAlert(subject, message) {
       '<p style="color:#888;font-size:11px">Timestamp: ' + formatDatetime(new Date()) + '</p>';
     GmailApp.sendEmail(
       ADMIN_EMAIL,
-      '[WUP ALERT] ' + subject,
+      '[Wake Up Call ALERT] ' + subject,
       '',
       {
         from:     SENDER_EMAIL,
         name:     SENDER_NAME,
-        htmlBody: buildEmailTemplate('Alert Tecnico WUP', bodyHtml)
+        htmlBody: buildEmailTemplate('Alert Tecnico Wake Up Call', bodyHtml)
       }
     );
   } catch (err) {
@@ -190,7 +189,7 @@ function sendDashboardLinkToCoach(coach, url) {
   const coachFullName = ((coach.nome || '') + ' ' + (coach.cognome || '')).trim();
   const bodyHtml = [
     '<p>Ciao <strong>' + sanitizeString(coachFullName) + '</strong>,</p>',
-    '<p>ecco il tuo link personale per consultare le prenotazioni WUP 13-15 marzo 2026:</p>',
+    '<p>ecco il tuo link personale per consultare le prenotazioni Wake Up Call 13-15 marzo 2026:</p>',
     '<p style="margin:20px 0">',
     '<a href="' + url + '" style="display:inline-block;background:#E57711;color:#fff;padding:14px 28px;',
     'text-decoration:none;border-radius:8px;font-size:15px;font-weight:700">',
@@ -201,12 +200,12 @@ function sendDashboardLinkToCoach(coach, url) {
 
   GmailApp.sendEmail(
     coach.email,
-    '[WUP] Il tuo link dashboard prenotazioni',
+    '[Wake Up Call] Il tuo link dashboard prenotazioni',
     'Accedi alla tua dashboard: ' + url,
     {
       from:     SENDER_EMAIL,
       name:     SENDER_NAME,
-      htmlBody: buildEmailTemplate('La tua dashboard WUP', bodyHtml)
+      htmlBody: buildEmailTemplate('La tua dashboard Wake Up Call', bodyHtml)
     }
   );
 
@@ -228,13 +227,13 @@ function buildEmailTemplate(title, bodyHtml) {
   '<table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr><td align="center" style="padding:24px 12px">' +
   '<table class="inner-card" width="580" cellpadding="0" cellspacing="0" role="presentation" style="background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.10);max-width:580px;width:100%">' +
   '<tr><td class="header-td" style="background:linear-gradient(135deg,#E57711 0%,#c96510 100%);padding:24px 32px;text-align:center">' +
-  '<h1 style="color:#fff;margin:0;font-size:24px;letter-spacing:2px;font-weight:800">WUP</h1>' +
+  '<h1 style="color:#fff;margin:0;font-size:24px;letter-spacing:2px;font-weight:800">Wake Up Call</h1>' +
   '<p style="color:rgba(255,255,255,.85);margin:4px 0 0;font-size:12px;letter-spacing:.5px;text-transform:uppercase">Coach Booking Platform</p></td></tr>' +
   '<tr><td class="sub-td" style="background:#f9f0e6;padding:14px 32px;border-bottom:2px solid #E57711">' +
   '<h2 style="color:#E57711;margin:0;font-size:15px;font-weight:700">' + title + '</h2></td></tr>' +
   '<tr><td class="body-td" style="padding:28px 32px;color:#333;font-size:14px;line-height:1.65">' + bodyHtml + '</td></tr>' +
   '<tr><td style="background:#f9f9f9;padding:18px 32px;border-top:1px solid #eee;text-align:center">' +
-  '<p style="color:#888;font-size:12px;margin:0">&copy; ' + new Date().getFullYear() + ' WUP Coach Booking — Alfio Bardolla Training Group</p>' +
+  '<p style="color:#888;font-size:12px;margin:0">&copy; ' + new Date().getFullYear() + ' Wake Up Call Coach Booking — Alfio Bardolla Training Group</p>' +
   '<p style="color:#aaa;font-size:11px;margin:4px 0 0">Email automatica generata dal sistema. Non rispondere a questo messaggio.</p>' +
   '</td></tr></table>' +
   '</td></tr></table></body></html>';
