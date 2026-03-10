@@ -45,26 +45,16 @@ function getCoachById(coachId) {
 
 function createBooking(bookingData) {
   const sheet = getSheet(SHEETS.BOOKINGS);
-  sheet.appendRow([
-    bookingData.booking_id,
-    bookingData.created_at,
-    bookingData.coach_id,
-    bookingData.coach_name,
-    bookingData.coach_email,
-    bookingData.client_name,
-    bookingData.client_surname,
-    bookingData.client_email,
-    bookingData.client_phone || '',
-    bookingData.start_datetime,
-    bookingData.end_datetime,
-    bookingData.timezone || TIMEZONE,
-    bookingData.notes || '',
-    bookingData.status,
-    bookingData.cancel_token,
-    bookingData.event_id || '',
-    bookingData.calendar_id || '',
-    '' // cancelled_at: vuoto alla creazione
-  ]);
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+
+  // Build row based on actual headers to handle dynamic columns
+  const row = headers.map(function(h) {
+    if (h === 'cancelled_at') return ''; // vuoto alla creazione
+    if (bookingData.hasOwnProperty(h)) return bookingData[h] || '';
+    return '';
+  });
+
+  sheet.appendRow(row);
   return bookingData.booking_id;
 }
 
@@ -142,4 +132,43 @@ function _rowToBooking(headers, row, rowNumber) {
   const booking = { _rowNumber: rowNumber };
   headers.forEach(function(h, i) { booking[h] = row[i]; });
   return booking;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SELLERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+function getAllSellers() {
+  const sheet = getSheet(SHEETS.SELLERS);
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return [];
+  const headers = data[0];
+  const sellers = [];
+  for (let i = 1; i < data.length; i++) {
+    const seller = _rowToSeller(headers, data[i]);
+    if (seller.active === true || seller.active === 'TRUE' || seller.active === 'true') {
+      sellers.push(seller);
+    }
+  }
+  return sellers;
+}
+
+function getSellerById(sellerId) {
+  const sheet = getSheet(SHEETS.SELLERS);
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return null;
+  const headers = data[0];
+  const idIndex = headers.indexOf('id');
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][idIndex]) === String(sellerId)) {
+      return _rowToSeller(headers, data[i]);
+    }
+  }
+  return null;
+}
+
+function _rowToSeller(headers, row) {
+  const seller = {};
+  headers.forEach(function(h, i) { seller[h] = row[i]; });
+  return seller;
 }

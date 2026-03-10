@@ -22,6 +22,9 @@ function doGet(e) {
       case 'getAdminBookings':   return handleGetAdminBookings(params);
       case 'getCoachBookings':   return handleGetCoachBookings(params);
       case 'getCoachLinks':      return handleGetCoachLinks(params);
+      case 'get_sellers':        return handleGetSellers(params);
+      case 'seller_bookings':    return handleSellerBookings(params);
+      case 'seller_auth':        return handleSellerAuth(params);
       default:
         return _buildWelcomePage();
     }
@@ -33,15 +36,26 @@ function doGet(e) {
 
 function doPost(e) {
   try {
-    if (!e.postData || !e.postData.contents) {
+    let action, params;
+
+    // Supporta sia JSON body che form-data / URL-encoded
+    if (e.postData && e.postData.contents) {
+      try {
+        const body = JSON.parse(e.postData.contents);
+        action = body.action || '';
+        params = body.params || body;
+      } catch(pe) {
+        // Non è JSON — prova form-data (e.parameter)
+        params = e.parameter || {};
+        action = params.action || '';
+      }
+    } else if (e.parameter && e.parameter.action) {
+      params = e.parameter;
+      action = params.action;
+    } else {
       return errorResponse('Body mancante.', 'MISSING_BODY');
     }
-    let body;
-    try { body = JSON.parse(e.postData.contents); }
-    catch(pe) { return errorResponse('JSON non valido.', 'INVALID_JSON'); }
 
-    const action = body.action || '';
-    const params = body.params || body;
     Logger.log('doPost - action: ' + action);
 
     switch (action) {
@@ -53,6 +67,11 @@ function doPost(e) {
       case 'adminCancelBooking':      return handleAdminCancelBooking(params);
       case 'updateBookingOutcome':    return handleUpdateBookingOutcome(params);
       case 'updateSalesforceFlag':   return handleUpdateSalesforceFlag(params);
+      case 'get_sellers':            return handleGetSellers(params);
+      case 'seller_bookings':        return handleSellerBookings(params);
+      case 'seller_auth':            return handleSellerAuth(params);
+      case 'seller_update_esito':    return handleSellerUpdateEsito(params);
+      case 'seller_update_salesforce': return handleSellerUpdateSalesforce(params);
       default:
         return errorResponse('Action non riconosciuta: ' + action, 'UNKNOWN_ACTION');
     }

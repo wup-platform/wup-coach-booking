@@ -50,7 +50,8 @@ const LOCK_TIMEOUT_MS = 30000;
 const SHEETS = {
   COACHES:  'Coaches',
   BOOKINGS: 'Bookings',
-  AUDIT:    'Audit'
+  AUDIT:    'Audit',
+  SELLERS:  'Sellers'
 };
 
 // Valori possibili per il campo status nel foglio Bookings

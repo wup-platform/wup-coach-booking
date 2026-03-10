@@ -213,6 +213,124 @@ function sendDashboardLinkToCoach(coach, url) {
     'Link dashboard inviato a ' + coach.email, { coachId: coach.id });
 }
 
+/**
+ * Invia email di conferma prenotazione al venditore.
+ */
+function sendSellerConfirmation(sellerEmail, sellerName, coachFullName, clientFullName, startDt, endDt, bookingId) {
+  try {
+    const durataMin = Math.round((endDt - startDt) / 60000);
+
+    const bodyHtml = [
+      '<p>Ciao <strong>' + sanitizeString(sellerName.trim()) + '</strong>,</p>',
+      '<p>hai prenotato una sessione per <strong>' + sanitizeString(clientFullName) + '</strong> con <strong>' + sanitizeString(coachFullName) + '</strong>.</p>',
+      '<hr>',
+      '<table style="border-collapse:collapse;width:100%">',
+      _tr('Cliente', sanitizeString(clientFullName), false),
+      _tr('Coach', sanitizeString(coachFullName), true),
+      _tr('Data e ora', formatDateItalian(startDt), false),
+      _tr('Durata', durataMin + ' minuti', true),
+      _tr('Codice prenotazione', bookingId, false),
+      '</table>',
+      '<hr>',
+      '<p>La prenotazione è stata confermata. Il cliente riceverà un invito nel calendario.</p>'
+    ].join('');
+
+    GmailApp.sendEmail(
+      sellerEmail,
+      'Prenotazione Coaching Confermata – ' + clientFullName + ' con ' + coachFullName,
+      '',
+      {
+        from:     SENDER_EMAIL,
+        name:     SENDER_NAME,
+        htmlBody: buildEmailTemplate('Prenotazione Coaching Confermata', bodyHtml)
+      }
+    );
+
+    logAudit(LOG_LEVEL.INFO, 'EMAIL_SELLER', bookingId,
+      'Email conferma inviata al venditore ' + sellerEmail, {});
+  } catch (err) {
+    logAudit(LOG_LEVEL.ERROR, 'EMAIL_SELLER', bookingId,
+      'Errore email venditore: ' + err.message, {});
+  }
+}
+
+/**
+ * Invia email di cancellazione al venditore.
+ */
+function sendSellerCancellation(seller, bookingData, coach) {
+  try {
+    const sellerFullName = ((seller.nome || '') + ' ' + (seller.cognome || '')).trim();
+    const coachFullName  = coach ? ((coach.nome || '') + ' ' + (coach.cognome || '')).trim() : '';
+    const clientFullName = (bookingData.client_name || '') + ' ' + (bookingData.client_surname || '');
+    const startDate = parseDateTime(String(bookingData.start_datetime));
+
+    const bodyHtml = [
+      '<p>Ciao <strong>' + sanitizeString(sellerFullName) + '</strong>,</p>',
+      '<p>la prenotazione che avevi effettuato per <strong>' + sanitizeString(clientFullName) + '</strong>',
+      coachFullName ? ' con <strong>' + sanitizeString(coachFullName) + '</strong>' : '',
+      ' è stata cancellata.</p>',
+      '<hr>',
+      '<table style="border-collapse:collapse;width:100%">',
+      _tr('Cliente', sanitizeString(clientFullName), false),
+      coachFullName ? _tr('Coach', sanitizeString(coachFullName), true) : '',
+      _tr('Data e ora', formatDateItalian(startDate), false),
+      _tr('Codice', String(bookingData.booking_id), true),
+      '</table>',
+      '<hr>',
+      '<p>Lo slot del coach è di nuovo disponibile per una nuova prenotazione.</p>'
+    ].join('');
+
+    GmailApp.sendEmail(
+      seller.email,
+      'Prenotazione Cancellata – ' + clientFullName + ' – ' +
+        Utilities.formatDate(startDate, TIMEZONE, 'dd/MM/yyyy'),
+      '',
+      {
+        from:     SENDER_EMAIL,
+        name:     SENDER_NAME,
+        htmlBody: buildEmailTemplate('Prenotazione Coaching Cancellata', bodyHtml)
+      }
+    );
+
+    logAudit(LOG_LEVEL.INFO, 'EMAIL_CANCEL_SELLER', String(bookingData.booking_id),
+      'Email cancellazione inviata al venditore ' + seller.email, {});
+  } catch (err) {
+    logAudit(LOG_LEVEL.ERROR, 'EMAIL_CANCEL_SELLER', String(bookingData.booking_id),
+      'Errore email cancellazione venditore: ' + err.message, {});
+  }
+}
+
+/**
+ * Invia al venditore il link personale per la sua dashboard.
+ */
+function sendDashboardLinkToSeller(seller, url) {
+  const sellerFullName = ((seller.nome || '') + ' ' + (seller.cognome || '')).trim();
+  const bodyHtml = [
+    '<p>Ciao <strong>' + sanitizeString(sellerFullName) + '</strong>,</p>',
+    '<p>ecco il tuo link personale per consultare le prenotazioni Wake Up Call 13-15 marzo 2026:</p>',
+    '<p style="margin:20px 0">',
+    '<a href="' + url + '" style="display:inline-block;background:#E57711;color:#fff;padding:14px 28px;',
+    'text-decoration:none;border-radius:8px;font-size:15px;font-weight:700">',
+    'Vedi le tue prenotazioni</a></p>',
+    '<p style="font-size:12px;color:#888;word-break:break-all">Link diretto: ' + url + '</p>',
+    '<p style="font-size:12px;color:#aaa">Il link è personale e riservato a te. Non condividerlo.</p>'
+  ].join('');
+
+  GmailApp.sendEmail(
+    seller.email,
+    '[Wake Up Call] Il tuo link dashboard prenotazioni',
+    'Accedi alla tua dashboard: ' + url,
+    {
+      from:     SENDER_EMAIL,
+      name:     SENDER_NAME,
+      htmlBody: buildEmailTemplate('La tua dashboard Wake Up Call', bodyHtml)
+    }
+  );
+
+  logAudit(LOG_LEVEL.INFO, 'DASHBOARD_LINK_SENT', '',
+    'Link dashboard inviato al venditore ' + seller.email, { sellerId: seller.id });
+}
+
 function buildEmailTemplate(title, bodyHtml) {
   return '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">' +
   '<style>body{margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;background:#f4f4f4}' +

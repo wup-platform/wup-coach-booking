@@ -104,6 +104,16 @@ function handleCreateBooking(params) {
     const rangeVal  = validateDateRange(startDate, endDate);
     if (!rangeVal.valid) return errorResponse(rangeVal.error, 'INVALID_DATE_RANGE');
 
+    // Controllo limite 2 prenotazioni per email
+    const existingConfirmed = getBookingsByStatus(BOOKING_STATUS.CONFIRMED);
+    const clientEmailLower = params.client_email.trim().toLowerCase();
+    const emailCount = existingConfirmed.filter(function(b) {
+      return String(b.client_email).toLowerCase() === clientEmailLower;
+    }).length;
+    if (emailCount >= 2) {
+      return errorResponse('Hai già 2 prenotazioni attive. Non è possibile prenotare più di 2 sessioni con la stessa email.', 'MAX_BOOKINGS_REACHED');
+    }
+
     // Acquisisci lock anti-concorrenza
     lock = acquireLock(LOCK_TIMEOUT_MS);
 
@@ -123,6 +133,10 @@ function handleCreateBooking(params) {
     const cancelToken = generateToken();
     const coachFullName = (coach.nome || '') + ' ' + (coach.cognome || '');
 
+    // Resolve seller info if provided
+    const sellerId   = sanitizeString(params.seller_id || '');
+    const sellerName = sanitizeString(params.seller_name || '');
+
     const bookingData = {
       booking_id:     bookingId,
       created_at:     formatDatetime(new Date()),
@@ -140,7 +154,9 @@ function handleCreateBooking(params) {
       status:         BOOKING_STATUS.CONFIRMED,
       cancel_token:   cancelToken,
       event_id:       '',
-      calendar_id:    ''
+      calendar_id:    '',
+      seller_id:      sellerId,
+      seller_name:    sellerName
     };
 
     // Crea evento calendario
@@ -163,6 +179,28 @@ function handleCreateBooking(params) {
 
     sendBookingConfirmationToClient(bookingData, coach);
     sendBookingNotificationToCoach(bookingData, coach);
+
+    // Send confirmation to seller if present
+    if (sellerId) {
+      try {
+        const seller = getSellerById(sellerId);
+        if (seller && seller.email) {
+          const clientFullName = bookingData.client_name + ' ' + bookingData.client_surname;
+          sendSellerConfirmation(
+            seller.email,
+            (seller.nome || '') + ' ' + (seller.cognome || ''),
+            coachFullName.trim(),
+            clientFullName,
+            startDate,
+            endDate,
+            bookingId
+          );
+        }
+      } catch (sellerErr) {
+        logAudit(LOG_LEVEL.WARN, 'CREATE_BOOKING', bookingId,
+          'Email venditore non inviata: ' + sellerErr.message, {});
+      }
+    }
 
     return successResponse({
       booking_id: bookingId,
@@ -288,7 +326,10 @@ function handleGetCoachBookings(params) {
         start_datetime: String(b.start_datetime),
         end_datetime:   String(b.end_datetime),
         notes:          String(b.notes || ''),
-        status:         String(b.status)
+        status:         String(b.status),
+        salesforce_opportunity: String(b.salesforce_opportunity || ''),
+        seller_id:      String(b.seller_id || ''),
+        seller_name:    String(b.seller_name || '')
         // Esclusi: client_email, cancel_token, event_id, calendar_id
       };
     });
@@ -344,6 +385,16 @@ function handleAdminCancelBooking(params) {
     if (coach) {
       try { sendCancellationToClient(booking, coach); } catch(e) {}
       try { sendCancellationToCoach(booking, coach);  } catch(e) {}
+    }
+
+    // Notify seller if booking has a seller_id
+    if (booking.seller_id) {
+      try {
+        const seller = getSellerById(String(booking.seller_id));
+        if (seller && seller.email) {
+          sendSellerCancellation(seller, booking, coach);
+        }
+      } catch(e) {}
     }
 
     return successResponse({
@@ -456,6 +507,57 @@ function handleUpdateBookingOutcome(params) {
   }
 }
 
+/**
+ * POST { action: 'updateSalesforceFlag', admin_token|coach_token, booking_id, salesforce_opportunity }
+ * Aggiorna il flag "Opportunità su Salesforce creata" per una prenotazione.
+ * Accesso consentito sia all'admin sia al coach (con coach_token).
+ */
+function handleUpdateSalesforceFlag(params) {
+  try {
+    // Auth: admin_token oppure coach_token valido
+    const isAdmin = params.admin_token && params.admin_token === DASHBOARD_ADMIN_TOKEN;
+    let isCoach = false;
+    if (!isAdmin && params.coach_id && params.coach_token) {
+      const coach = getCoachById(params.coach_id);
+      if (coach && coach.dashboard_token && String(coach.dashboard_token) === String(params.coach_token)) {
+        isCoach = true;
+      }
+    }
+    if (!isAdmin && !isCoach) {
+      return errorResponse('Non autorizzato.', 'UNAUTHORIZED');
+    }
+    if (!params.booking_id) return errorResponse('booking_id mancante.', 'MISSING_BOOKING_ID');
+
+    const flagValue = params.salesforce_opportunity === true || params.salesforce_opportunity === 'true' || params.salesforce_opportunity === 'TRUE';
+
+    const sheet = getSheet(SHEETS.BOOKINGS);
+    const data  = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const idIdx   = headers.indexOf('booking_id');
+
+    // Aggiungi colonna salesforce_opportunity se non esiste
+    let sfIdx = headers.indexOf('salesforce_opportunity');
+    if (sfIdx === -1) {
+      sfIdx = headers.length;
+      sheet.getRange(1, sfIdx + 1).setValue('salesforce_opportunity').setFontWeight('bold').setBackground('#D3D3D3');
+    }
+
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][idIdx]) === String(params.booking_id)) {
+        sheet.getRange(i + 1, sfIdx + 1).setValue(flagValue ? 'TRUE' : 'FALSE');
+        logAudit(LOG_LEVEL.INFO, 'UPDATE_SF_FLAG', params.booking_id,
+          'Salesforce opportunity: ' + (flagValue ? 'TRUE' : 'FALSE'), { actor: isAdmin ? 'admin' : 'coach' });
+        return successResponse({ message: 'Flag Salesforce aggiornato.', booking_id: params.booking_id });
+      }
+    }
+
+    return errorResponse('Prenotazione non trovata.', 'BOOKING_NOT_FOUND');
+  } catch(err) {
+    logAudit(LOG_LEVEL.ERROR, 'UPDATE_SF_FLAG', '', err.message, {});
+    return errorResponse('Errore aggiornamento flag Salesforce.', 'UPDATE_SF_FLAG_ERROR');
+  }
+}
+
 // Helper: booking anonimizzato per la dashboard admin
 function _safeDashboardBooking(b) {
   return {
@@ -472,9 +574,236 @@ function _safeDashboardBooking(b) {
     notes:          String(b.notes || ''),
     status:         String(b.status),
     cancelled_at:   String(b.cancelled_at || ''),
-    esito:          String(b.esito || '')
+    esito:          String(b.esito || ''),
+    salesforce_opportunity: String(b.salesforce_opportunity || ''),
+    seller_id:      String(b.seller_id || ''),
+    seller_name:    String(b.seller_name || '')
     // Esclusi: cancel_token, event_id, calendar_id
   };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SELLER HANDLERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * GET/POST action=get_sellers
+ * Returns list of active sellers (id, nome, cognome). No auth required.
+ */
+function handleGetSellers(params) {
+  try {
+    const sellers = getAllSellers();
+    const safeSellers = sellers.map(function(s) {
+      return { id: s.id, nome: s.nome, cognome: s.cognome };
+    });
+    return successResponse({ sellers: safeSellers });
+  } catch (err) {
+    logAudit(LOG_LEVEL.ERROR, 'GET_SELLERS', '', err.message, {});
+    return errorResponse('Impossibile recuperare la lista dei venditori.', 'GET_SELLERS_ERROR');
+  }
+}
+
+/**
+ * GET/POST action=seller_auth — validates seller_id + seller_token, returns seller info.
+ */
+function handleSellerAuth(params) {
+  try {
+    if (!params.seller_id)    return errorResponse('seller_id mancante.', 'MISSING_SELLER_ID');
+    if (!params.seller_token) return errorResponse('seller_token mancante.', 'MISSING_SELLER_TOKEN');
+
+    const seller = getSellerById(params.seller_id);
+    if (!seller) return errorResponse('Venditore non trovato.', 'SELLER_NOT_FOUND');
+
+    if (!seller.dashboard_token || String(seller.dashboard_token) !== String(params.seller_token)) {
+      return errorResponse('Non autorizzato.', 'UNAUTHORIZED');
+    }
+
+    return successResponse({
+      seller: {
+        id:      String(seller.id),
+        nome:    String(seller.nome),
+        cognome: String(seller.cognome),
+        email:   String(seller.email)
+      }
+    });
+  } catch (err) {
+    logAudit(LOG_LEVEL.ERROR, 'SELLER_AUTH', '', err.message, {});
+    return errorResponse('Errore autenticazione venditore.', 'SELLER_AUTH_ERROR');
+  }
+}
+
+/**
+ * GET/POST action=seller_bookings — requires seller_id + seller_token.
+ * Returns all bookings where seller_id matches.
+ */
+function handleSellerBookings(params) {
+  try {
+    if (!params.seller_id)    return errorResponse('seller_id mancante.', 'MISSING_SELLER_ID');
+    if (!params.seller_token) return errorResponse('seller_token mancante.', 'MISSING_SELLER_TOKEN');
+
+    const seller = getSellerById(params.seller_id);
+    if (!seller) return errorResponse('Venditore non trovato.', 'SELLER_NOT_FOUND');
+
+    if (!seller.dashboard_token || String(seller.dashboard_token) !== String(params.seller_token)) {
+      return errorResponse('Non autorizzato.', 'UNAUTHORIZED');
+    }
+
+    const allConfirmed = getBookingsByStatus(BOOKING_STATUS.CONFIRMED);
+    const allCancelled = getBookingsByStatus(BOOKING_STATUS.CANCELLED);
+    const allBookings  = allConfirmed.concat(allCancelled);
+
+    let bookings = allBookings.filter(function(b) {
+      return String(b.seller_id) === String(params.seller_id);
+    });
+
+    if (params.date) {
+      bookings = bookings.filter(function(b) {
+        return _isoDatePart(b.start_datetime) === params.date;
+      });
+    }
+
+    // Sort by start_datetime
+    bookings.sort(function(a, b) {
+      return new Date(a.start_datetime) - new Date(b.start_datetime);
+    });
+
+    const safe = bookings.map(function(b) {
+      return {
+        booking_id:     String(b.booking_id),
+        coach_id:       String(b.coach_id),
+        coach_name:     String(b.coach_name),
+        client_name:    String(b.client_name),
+        client_surname: String(b.client_surname),
+        client_email:   String(b.client_email || ''),
+        client_phone:   String(b.client_phone || ''),
+        start_datetime: String(b.start_datetime),
+        end_datetime:   String(b.end_datetime),
+        notes:          String(b.notes || ''),
+        status:         String(b.status),
+        esito:          String(b.esito || ''),
+        salesforce_opportunity: String(b.salesforce_opportunity || ''),
+        seller_id:      String(b.seller_id || ''),
+        seller_name:    String(b.seller_name || '')
+      };
+    });
+
+    return successResponse({
+      bookings: safe,
+      seller: {
+        id:      String(seller.id),
+        nome:    String(seller.nome),
+        cognome: String(seller.cognome)
+      },
+      total: safe.length
+    });
+
+  } catch (err) {
+    logAudit(LOG_LEVEL.ERROR, 'SELLER_BOOKINGS', '', err.message, {});
+    return errorResponse('Errore nel recupero delle prenotazioni.', 'SELLER_BOOKINGS_ERROR');
+  }
+}
+
+/**
+ * POST action=seller_update_esito — updates esito only if booking belongs to seller.
+ */
+function handleSellerUpdateEsito(params) {
+  try {
+    if (!params.seller_id)    return errorResponse('seller_id mancante.', 'MISSING_SELLER_ID');
+    if (!params.seller_token) return errorResponse('seller_token mancante.', 'MISSING_SELLER_TOKEN');
+    if (!params.booking_id)   return errorResponse('booking_id mancante.', 'MISSING_BOOKING_ID');
+
+    const seller = getSellerById(params.seller_id);
+    if (!seller) return errorResponse('Venditore non trovato.', 'SELLER_NOT_FOUND');
+    if (!seller.dashboard_token || String(seller.dashboard_token) !== String(params.seller_token)) {
+      return errorResponse('Non autorizzato.', 'UNAUTHORIZED');
+    }
+
+    const VALID = ['VENDUTO', 'NON_VENDUTO', 'IN_TRATTATIVA', ''];
+    if (VALID.indexOf(params.esito || '') === -1) {
+      return errorResponse('Esito non valido.', 'INVALID_ESITO');
+    }
+
+    const sheet   = getSheet(SHEETS.BOOKINGS);
+    const data    = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const idIdx       = headers.indexOf('booking_id');
+    const sellerIdx   = headers.indexOf('seller_id');
+
+    // Ensure esito column exists
+    let esitoIdx = headers.indexOf('esito');
+    if (esitoIdx === -1) {
+      esitoIdx = headers.length;
+      sheet.getRange(1, esitoIdx + 1).setValue('esito').setFontWeight('bold').setBackground('#D3D3D3');
+    }
+
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][idIdx]) === String(params.booking_id)) {
+        // Check ownership
+        if (sellerIdx === -1 || String(data[i][sellerIdx]) !== String(params.seller_id)) {
+          return errorResponse('Questa prenotazione non appartiene a te.', 'NOT_YOUR_BOOKING');
+        }
+        sheet.getRange(i + 1, esitoIdx + 1).setValue(params.esito || '');
+        logAudit(LOG_LEVEL.INFO, 'SELLER_UPDATE_ESITO', params.booking_id,
+          'Esito: ' + (params.esito || 'reset'), { actor: 'seller', sellerId: params.seller_id });
+        return successResponse({ message: 'Esito salvato.', booking_id: params.booking_id });
+      }
+    }
+
+    return errorResponse('Prenotazione non trovata.', 'BOOKING_NOT_FOUND');
+  } catch (err) {
+    logAudit(LOG_LEVEL.ERROR, 'SELLER_UPDATE_ESITO', '', err.message, {});
+    return errorResponse('Errore aggiornamento esito.', 'SELLER_UPDATE_ESITO_ERROR');
+  }
+}
+
+/**
+ * POST action=seller_update_salesforce — updates salesforce flag only if booking belongs to seller.
+ */
+function handleSellerUpdateSalesforce(params) {
+  try {
+    if (!params.seller_id)    return errorResponse('seller_id mancante.', 'MISSING_SELLER_ID');
+    if (!params.seller_token) return errorResponse('seller_token mancante.', 'MISSING_SELLER_TOKEN');
+    if (!params.booking_id)   return errorResponse('booking_id mancante.', 'MISSING_BOOKING_ID');
+
+    const seller = getSellerById(params.seller_id);
+    if (!seller) return errorResponse('Venditore non trovato.', 'SELLER_NOT_FOUND');
+    if (!seller.dashboard_token || String(seller.dashboard_token) !== String(params.seller_token)) {
+      return errorResponse('Non autorizzato.', 'UNAUTHORIZED');
+    }
+
+    const flagValue = params.salesforce === true || params.salesforce === 'true' || params.salesforce === 'TRUE';
+
+    const sheet   = getSheet(SHEETS.BOOKINGS);
+    const data    = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const idIdx       = headers.indexOf('booking_id');
+    const sellerIdx   = headers.indexOf('seller_id');
+
+    // Ensure salesforce_opportunity column exists
+    let sfIdx = headers.indexOf('salesforce_opportunity');
+    if (sfIdx === -1) {
+      sfIdx = headers.length;
+      sheet.getRange(1, sfIdx + 1).setValue('salesforce_opportunity').setFontWeight('bold').setBackground('#D3D3D3');
+    }
+
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][idIdx]) === String(params.booking_id)) {
+        // Check ownership
+        if (sellerIdx === -1 || String(data[i][sellerIdx]) !== String(params.seller_id)) {
+          return errorResponse('Questa prenotazione non appartiene a te.', 'NOT_YOUR_BOOKING');
+        }
+        sheet.getRange(i + 1, sfIdx + 1).setValue(flagValue ? 'TRUE' : 'FALSE');
+        logAudit(LOG_LEVEL.INFO, 'SELLER_UPDATE_SF', params.booking_id,
+          'Salesforce opportunity: ' + (flagValue ? 'TRUE' : 'FALSE'), { actor: 'seller', sellerId: params.seller_id });
+        return successResponse({ message: 'Flag Salesforce aggiornato.', booking_id: params.booking_id });
+      }
+    }
+
+    return errorResponse('Prenotazione non trovata.', 'BOOKING_NOT_FOUND');
+  } catch (err) {
+    logAudit(LOG_LEVEL.ERROR, 'SELLER_UPDATE_SF', '', err.message, {});
+    return errorResponse('Errore aggiornamento flag Salesforce.', 'SELLER_UPDATE_SF_ERROR');
+  }
 }
 
 function handleCancelBooking(params) {
@@ -504,6 +833,19 @@ function handleCancelBooking(params) {
     if (coach) {
       sendCancellationToClient(booking, coach);
       sendCancellationToCoach(booking, coach);
+    }
+
+    // Notify seller if booking has a seller_id
+    if (booking.seller_id) {
+      try {
+        const seller = getSellerById(String(booking.seller_id));
+        if (seller && seller.email) {
+          sendSellerCancellation(seller, booking, coach);
+        }
+      } catch (sellerErr) {
+        logAudit(LOG_LEVEL.WARN, 'CANCEL_BOOKING', String(booking.booking_id),
+          'Email cancellazione venditore non inviata: ' + sellerErr.message, {});
+      }
     }
 
     return successResponse({

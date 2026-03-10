@@ -45,7 +45,8 @@ function _setupBookingsSheet(ss) {
     'booking_id', 'created_at', 'coach_id', 'coach_name', 'coach_email',
     'client_name', 'client_surname', 'client_email', 'client_phone',
     'start_datetime', 'end_datetime', 'timezone', 'notes', 'status',
-    'cancel_token', 'event_id', 'calendar_id', 'cancelled_at'
+    'cancel_token', 'event_id', 'calendar_id', 'cancelled_at',
+    'seller_id', 'seller_name'
   ];
   const sheet = _getOrCreateSheet(ss, SHEETS.BOOKINGS);
   _applyHeaders(sheet, headers);
@@ -280,62 +281,65 @@ function blockUnavailableSlots() {
   // Formato: { coachId, data, hInizio, mInizio, hFine, mFine, label }
   var blocchi = [
     // ═══ VENERDI 13 MARZO ═══
-    // De Marco: occupato 13:00-14:45
-    { coachId: 'coach_007', data: '2026-03-13', hI:13, mI:0,  hF:14, mF:45, label: 'De Marco - ven 13:00-14:45' },
-    // Monza: occupato 09:00-10:00 (08:00-10:00 ma working hours da 09:00), 13:00-15:00
-    { coachId: 'coach_004', data: '2026-03-13', hI:9,  mI:0,  hF:10, mF:0,  label: 'Monza - ven 09:00-10:00' },
-    { coachId: 'coach_004', data: '2026-03-13', hI:13, mI:0,  hF:15, mF:0,  label: 'Monza - ven 13:00-15:00' },
-    // Pagliano: occupata 13:00-14:45
-    { coachId: 'coach_006', data: '2026-03-13', hI:13, mI:0,  hF:14, mF:45, label: 'Pagliano - ven 13:00-14:45' },
-    // Lovallo: occupata 13:00-14:45
-    { coachId: 'coach_015', data: '2026-03-13', hI:13, mI:0,  hF:14, mF:45, label: 'Lovallo - ven 13:00-14:45' },
+    // De Marco: occupato 12:55-14:50
+    { coachId: 'coach_007', data: '2026-03-13', hI:12, mI:55, hF:14, mF:50, label: 'De Marco - ven 12:55-14:50' },
+    // Monza: occupato 08:15-10:10, 12:55-15:10, 18:35-19:10
+    { coachId: 'coach_004', data: '2026-03-13', hI:8,  mI:15, hF:10, mF:10, label: 'Monza - ven 08:15-10:10' },
+    { coachId: 'coach_004', data: '2026-03-13', hI:12, mI:55, hF:15, mF:10, label: 'Monza - ven 12:55-15:10' },
+    { coachId: 'coach_004', data: '2026-03-13', hI:18, mI:35, hF:19, mF:10, label: 'Monza - ven 18:35-19:10' },
+    // Pagliano: occupata 12:55-14:50
+    { coachId: 'coach_006', data: '2026-03-13', hI:12, mI:55, hF:14, mF:50, label: 'Pagliano - ven 12:55-14:50' },
+    // Lovallo: occupata 08:15-15:30 (tutto il mattino + primo pomeriggio)
+    { coachId: 'coach_015', data: '2026-03-13', hI:8,  mI:15, hF:15, mF:30, label: 'Lovallo - ven 08:15-15:30' },
 
     // ═══ SABATO 14 MARZO ═══
-    // Colombo: occupato 12:30-13:00
-    { coachId: 'coach_002', data: '2026-03-14', hI:12, mI:30, hF:13, mF:0,  label: 'Colombo - sab 12:30-13:00' },
-    // Pagliano: libera solo 14:45-19:00 → blocco 09:00-14:45
-    { coachId: 'coach_006', data: '2026-03-14', hI:9,  mI:0,  hF:14, mF:45, label: 'Pagliano - sab 09:00-14:45' },
-    // Ortelli: occupato 15:30-16:15
-    { coachId: 'coach_009', data: '2026-03-14', hI:15, mI:30, hF:16, mF:15, label: 'Ortelli - sab 15:30-16:15' },
-    // Redi: occupato 15:30-16:15
-    { coachId: 'coach_010', data: '2026-03-14', hI:15, mI:30, hF:16, mF:15, label: 'Redi - sab 15:30-16:15' },
-    // Acquistapace: occupato 09:00-09:30 (08:00-09:30 ma WH da 09:00) e 13:00-14:45
-    { coachId: 'coach_014', data: '2026-03-14', hI:9,  mI:0,  hF:9,  mF:30, label: 'Acquistapace - sab 09:00-09:30' },
-    { coachId: 'coach_014', data: '2026-03-14', hI:13, mI:0,  hF:14, mF:45, label: 'Acquistapace - sab 13:00-14:45' },
-    // Lovallo: occupata 16:30-18:30 (ma WH fino 18:00 → 16:30-18:00)
-    { coachId: 'coach_015', data: '2026-03-14', hI:16, mI:30, hF:18, mF:0,  label: 'Lovallo - sab 16:30-18:00' },
-    // Crestan: occupato 12:30-13:00
-    { coachId: 'coach_017', data: '2026-03-14', hI:12, mI:30, hF:13, mF:0,  label: 'Crestan - sab 12:30-13:00' },
-    // Migliaccio: occupato 15:30-16:15
-    { coachId: 'coach_018', data: '2026-03-14', hI:15, mI:30, hF:16, mF:15, label: 'Migliaccio - sab 15:30-16:15' },
-    // Cuoco: occupato 12:30-13:00
-    { coachId: 'coach_026', data: '2026-03-14', hI:12, mI:30, hF:13, mF:0,  label: 'Cuoco - sab 12:30-13:00' },
-    // Salvato: occupato 15:30-16:15
-    { coachId: 'coach_029', data: '2026-03-14', hI:15, mI:30, hF:16, mF:15, label: 'Salvato - sab 15:30-16:15' },
+    // De Marco: occupato TUTTO IL GIORNO 08:15-19:10
+    { coachId: 'coach_007', data: '2026-03-14', hI:8,  mI:15, hF:19, mF:10, label: 'De Marco - sab TUTTO IL GIORNO' },
+    // Pagliano: occupata 08:15-14:50
+    { coachId: 'coach_006', data: '2026-03-14', hI:8,  mI:15, hF:14, mF:50, label: 'Pagliano - sab 08:15-14:50' },
+    // Colombo: occupato 12:35-13:10
+    { coachId: 'coach_002', data: '2026-03-14', hI:12, mI:35, hF:13, mF:10, label: 'Colombo - sab 12:35-13:10' },
+    // Acquistapace: occupato 08:15-09:30 e 12:55-14:50
+    { coachId: 'coach_014', data: '2026-03-14', hI:8,  mI:15, hF:9,  mF:30, label: 'Acquistapace - sab 08:15-09:30' },
+    { coachId: 'coach_014', data: '2026-03-14', hI:12, mI:55, hF:14, mF:50, label: 'Acquistapace - sab 12:55-14:50' },
+    // Lovallo: occupata TUTTO IL GIORNO 08:15-19:10
+    { coachId: 'coach_015', data: '2026-03-14', hI:8,  mI:15, hF:19, mF:10, label: 'Lovallo - sab TUTTO IL GIORNO' },
+    // Crestan: occupato 12:35-13:10
+    { coachId: 'coach_017', data: '2026-03-14', hI:12, mI:35, hF:13, mF:10, label: 'Crestan - sab 12:35-13:10' },
+    // Cuoco: occupato 12:35-13:10
+    { coachId: 'coach_026', data: '2026-03-14', hI:12, mI:35, hF:13, mF:10, label: 'Cuoco - sab 12:35-13:10' },
+    // Ortelli: occupato 15:35-16:10
+    { coachId: 'coach_009', data: '2026-03-14', hI:15, mI:35, hF:16, mF:10, label: 'Ortelli - sab 15:35-16:10' },
+    // Redi: occupato 15:35-16:10
+    { coachId: 'coach_010', data: '2026-03-14', hI:15, mI:35, hF:16, mF:10, label: 'Redi - sab 15:35-16:10' },
+    // Migliaccio: occupato 15:35-16:10
+    { coachId: 'coach_018', data: '2026-03-14', hI:15, mI:35, hF:16, mF:10, label: 'Migliaccio - sab 15:35-16:10' },
+    // Salvato: occupato 15:35-16:10
+    { coachId: 'coach_029', data: '2026-03-14', hI:15, mI:35, hF:16, mF:10, label: 'Salvato - sab 15:35-16:10' },
 
     // ═══ DOMENICA 15 MARZO ═══
-    // De Marco: libero solo 13:15-19:00 → blocco 09:00-13:15
-    { coachId: 'coach_007', data: '2026-03-15', hI:9,  mI:0,  hF:13, mF:15, label: 'De Marco - dom 09:00-13:15' },
-    // Garagiola: occupato 11:00-11:45
-    { coachId: 'coach_001', data: '2026-03-15', hI:11, mI:0,  hF:11, mF:45, label: 'Garagiola - dom 11:00-11:45' },
-    // Pasetto: occupata 11:00-11:45
-    { coachId: 'coach_003', data: '2026-03-15', hI:11, mI:0,  hF:11, mF:45, label: 'Pasetto - dom 11:00-11:45' },
-    // Monza: occupato 11:00-11:45
-    { coachId: 'coach_004', data: '2026-03-15', hI:11, mI:0,  hF:11, mF:45, label: 'Monza - dom 11:00-11:45' },
-    // Marras: occupato 11:00-11:45
-    { coachId: 'coach_005', data: '2026-03-15', hI:11, mI:0,  hF:11, mF:45, label: 'Marras - dom 11:00-11:45' },
-    // Fasciano: occupato 11:00-11:45
-    { coachId: 'coach_011', data: '2026-03-15', hI:11, mI:0,  hF:11, mF:45, label: 'Fasciano - dom 11:00-11:45' },
-    // Sgambato: occupato 11:00-11:45
-    { coachId: 'coach_013', data: '2026-03-15', hI:11, mI:0,  hF:11, mF:45, label: 'Sgambato - dom 11:00-11:45' },
-    // Acquistapace: occupato 11:00-11:45
-    { coachId: 'coach_014', data: '2026-03-15', hI:11, mI:0,  hF:11, mF:45, label: 'Acquistapace - dom 11:00-11:45' },
-    // Lovallo: occupata 09:00-09:30
-    { coachId: 'coach_015', data: '2026-03-15', hI:9,  mI:0,  hF:9,  mF:30, label: 'Lovallo - dom 09:00-09:30' },
-    // Bertacchi: occupato 11:00-11:45
-    { coachId: 'coach_024', data: '2026-03-15', hI:11, mI:0,  hF:11, mF:45, label: 'Bertacchi - dom 11:00-11:45' },
-    // Lavorenti: occupato 11:00-11:45
-    { coachId: 'coach_027', data: '2026-03-15', hI:11, mI:0,  hF:11, mF:45, label: 'Lavorenti - dom 11:00-11:45' },
+    // De Marco: occupato 08:15-13:10
+    { coachId: 'coach_007', data: '2026-03-15', hI:8,  mI:15, hF:13, mF:10, label: 'De Marco - dom 08:15-13:10' },
+    // Garagiola: occupato 10:55-11:50
+    { coachId: 'coach_001', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Garagiola - dom 10:55-11:50' },
+    // Pasetto: occupata 10:55-11:50
+    { coachId: 'coach_003', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Pasetto - dom 10:55-11:50' },
+    // Monza: occupato 10:55-11:50
+    { coachId: 'coach_004', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Monza - dom 10:55-11:50' },
+    // Marras: occupato 10:55-11:50
+    { coachId: 'coach_005', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Marras - dom 10:55-11:50' },
+    // Fasciano: occupato 10:55-11:50
+    { coachId: 'coach_011', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Fasciano - dom 10:55-11:50' },
+    // Sgambato: occupato 10:55-11:50
+    { coachId: 'coach_013', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Sgambato - dom 10:55-11:50' },
+    // Acquistapace: occupato 10:55-11:50
+    { coachId: 'coach_014', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Acquistapace - dom 10:55-11:50' },
+    // Lovallo: occupata 08:55-09:30
+    { coachId: 'coach_015', data: '2026-03-15', hI:8,  mI:55, hF:9,  mF:30, label: 'Lovallo - dom 08:55-09:30' },
+    // Bertacchi: occupato 10:55-11:50
+    { coachId: 'coach_024', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Bertacchi - dom 10:55-11:50' },
+    // Lavorenti: occupato 10:55-11:50
+    { coachId: 'coach_027', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Lavorenti - dom 10:55-11:50' },
   ];
 
   let ok = 0;
@@ -622,6 +626,166 @@ function protectCoachesSheet() {
   } catch (err) {
     Logger.log('[PROTECT] ERRORE: ' + err.message);
     SpreadsheetApp.getUi().alert('ERRORE protezione: ' + err.message);
+  }
+}
+
+/**
+ * Crea il foglio "Sellers" con 26 venditori e genera un dashboard_token per ognuno.
+ * Eseguire UNA SOLA VOLTA dall'editor Apps Script.
+ */
+function setupSellers() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = _getOrCreateSheet(ss, SHEETS.SELLERS);
+  const headers = ['id', 'nome', 'cognome', 'email', 'dashboard_token', 'active'];
+  _applyHeaders(sheet, headers);
+
+  const sellers = [
+    ['seller_001', 'Alberto',    'Romeo',          'alberto.romeo@alfiobardolla.com'],
+    ['seller_002', 'Aldo',       'Costarella',     'aldo.costarella@alfiobardolla.com'],
+    ['seller_003', 'Alessandro', 'Lazzara',        'alessandro.lazzara@alfiobardolla.com'],
+    ['seller_004', 'Alexia',     'Seveso',         'alexia.seveso@alfiobardolla.com'],
+    ['seller_005', 'Antonluca',  'Avagliano',      'antonluca.avagliano@alfiobardolla.com'],
+    ['seller_006', 'Barbara',    'Licciardello',   'barbara.licciardello@alfiobardolla.com'],
+    ['seller_007', 'Davide',     'Chesi',          'davide.chesi@alfiobardolla.com'],
+    ['seller_008', 'Elena',      'Giordano',       'elena.giordano@alfiobardolla.com'],
+    ['seller_009', 'Emanuela',   'Brunetti',       'emanuela.brunetti@alfiobardolla.com'],
+    ['seller_010', 'Ester',      'Cascino',        'ester.cascino@alfiobardolla.com'],
+    ['seller_011', 'Fabrizio',   'Badino',         'fabrizio.badino@alfiobardolla.com'],
+    ['seller_012', 'Federica',   'Picicco',        'federica.picicco@alfiobardolla.com'],
+    ['seller_013', 'Federico',   'Chesi',          'federico.chesi@alfiobardolla.com'],
+    ['seller_014', 'Filippo',    'Assiani',        'filippo.assiani@alfiobardolla.com'],
+    ['seller_015', 'Giada',      'Antonelli',      'giada.antonelli@alfiobardolla.com'],
+    ['seller_016', 'Giovanni',   'Miniati',        'giovanni.miniati@alfiobardolla.com'],
+    ['seller_017', 'Girolamo',   'Simonetta',      'girolamo.simonetta@alfiobardolla.com'],
+    ['seller_018', 'Giulio',     'Montis',         'giulio.montis@alfiobardolla.com'],
+    ['seller_019', 'Giuseppe',   'Bernardo',       'giuseppe.bernardo@alfiobardolla.com'],
+    ['seller_020', 'Lorena',     'La Ferrera',     'lorena.laferrera@alfiobardolla.com'],
+    ['seller_021', 'Luca',       'Motti',          'luca.motti@alfiobardolla.com'],
+    ['seller_022', 'Matteo',     'Carozza',        'matteo.carozza@alfiobardolla.com'],
+    ['seller_023', 'Matteo',     'Schiavone',      'matteo.schiavone@alfiobardolla.com'],
+    ['seller_024', 'Miriam',     'Brandoni',       'miriam.brandoni@alfiobardolla.com'],
+    ['seller_025', 'Stefano',    'Chiodini',       'stefano.chiodini@alfiobardolla.com'],
+    ['seller_026', 'Valerio',    'Piras',          'valerio.piras@alfiobardolla.com']
+  ];
+
+  // Controlla seller già presenti per evitare duplicati
+  const existingData = sheet.getDataRange().getValues();
+  const existingIds = existingData.slice(1).map(function(r) { return String(r[0]); });
+
+  let aggiunti = 0;
+  sellers.forEach(function(s) {
+    if (existingIds.indexOf(s[0]) !== -1) {
+      Logger.log('[GIA PRESENTE] ' + s[0]);
+      return;
+    }
+    const token = generateToken();
+    sheet.appendRow([s[0], s[1], s[2], s[3], token, 'TRUE']);
+    aggiunti++;
+  });
+
+  Logger.log('setupSellers completato: ' + aggiunti + ' venditori inseriti.');
+  SpreadsheetApp.getUi().alert('Sellers creati: ' + aggiunti);
+}
+
+/**
+ * Genera i dashboard_token per i seller (se mancanti) e invia i link via email.
+ * Simile a generateDashboardTokens() ma per i venditori.
+ * Dashboard URL: https://wup-platform.github.io/wup-coach-dashboard/seller.html
+ * Eseguire UNA SOLA VOLTA dall'editor Apps Script.
+ */
+function generateSellerDashboardTokens() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(SHEETS.SELLERS);
+  if (!sheet) {
+    Logger.log('Foglio Sellers non trovato. Esegui prima setupSellers().');
+    return;
+  }
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+
+  const colId      = headers.indexOf('id');
+  const colNome    = headers.indexOf('nome');
+  const colCognome = headers.indexOf('cognome');
+  const colEmail   = headers.indexOf('email');
+  const colToken   = headers.indexOf('dashboard_token');
+  const colActive  = headers.indexOf('active');
+
+  const DASHBOARD_BASE_URL = 'https://wup-platform.github.io/wup-coach-dashboard/seller.html';
+  const urlList = [];
+  let generati = 0;
+
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    const active = String(row[colActive]).toUpperCase();
+    if (active !== 'TRUE') continue;
+
+    const sellerId = String(row[colId]);
+    const nome     = String(row[colNome]);
+    const cognome  = String(row[colCognome]);
+    const email    = String(row[colEmail]);
+
+    // Salta se il token esiste già
+    const existingToken = String(row[colToken] !== undefined ? row[colToken] : '').trim();
+    let token;
+    if (existingToken.length > 0) {
+      token = existingToken;
+      Logger.log('[SKIP] Token già presente per ' + sellerId);
+    } else {
+      token = generateToken();
+      sheet.getRange(i + 1, colToken + 1).setValue(token);
+    }
+
+    const url = DASHBOARD_BASE_URL + '?id=' + encodeURIComponent(sellerId) + '&token=' + token;
+    urlList.push({ sellerId: sellerId, nome: nome + ' ' + cognome, email: email, url: url });
+
+    Logger.log('[URL] ' + nome + ' ' + cognome + ': ' + url);
+    generati++;
+    Utilities.sleep(300);
+  }
+
+  // Log riepilogo nel Logger (nessuna email inviata — i link si inviano manualmente)
+  urlList.forEach(function(u) {
+    Logger.log(u.sellerId + ' — ' + u.nome + ' — ' + u.url);
+  });
+
+  Logger.log('generateSellerDashboardTokens completato: ' + generati + ' venditori aggiornati.');
+  SpreadsheetApp.getUi().alert('Token generati: ' + generati + '\nI link sono visibili nel Logger e nel foglio Sellers. Nessuna email inviata.');
+}
+
+/**
+ * Aggiunge le colonne 'seller_id' e 'seller_name' al foglio Bookings se non esistono.
+ * Eseguire UNA SOLA VOLTA dall'editor Apps Script.
+ */
+function addSellerColumns() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(SHEETS.BOOKINGS);
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+
+  let added = 0;
+
+  if (headers.indexOf('seller_id') === -1) {
+    const col = headers.length + added + 1;
+    sheet.getRange(1, col).setValue('seller_id').setFontWeight('bold').setBackground('#D3D3D3');
+    Logger.log('Colonna seller_id aggiunta in posizione ' + col);
+    added++;
+  } else {
+    Logger.log('Colonna seller_id già presente.');
+  }
+
+  if (headers.indexOf('seller_name') === -1) {
+    const col = headers.length + added + 1;
+    sheet.getRange(1, col).setValue('seller_name').setFontWeight('bold').setBackground('#D3D3D3');
+    Logger.log('Colonna seller_name aggiunta in posizione ' + col);
+    added++;
+  } else {
+    Logger.log('Colonna seller_name già presente.');
+  }
+
+  if (added > 0) {
+    SpreadsheetApp.getUi().alert('Colonne aggiunte al foglio Bookings: ' + added);
+  } else {
+    SpreadsheetApp.getUi().alert('Le colonne seller_id e seller_name esistono già.');
   }
 }
 

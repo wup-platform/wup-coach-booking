@@ -958,6 +958,66 @@
   flex-shrink: 0;
 }
 
+/* Seller autocomplete */
+#wup-app .seller-field-wrapper {
+  position: relative;
+  grid-column: 1 / -1;
+  margin-bottom: 6px;
+}
+#wup-app .seller-field-wrapper .seller-label-helper {
+  display: block;
+  font-size: .75rem;
+  font-weight: 400;
+  color: var(--gray-text);
+  margin-top: 2px;
+}
+#wup-app .seller-autocomplete-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: var(--white);
+  border: 2px solid var(--gray-light);
+  border-top: none;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  max-height: 200px;
+  overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0,0,0,.1);
+}
+#wup-app .seller-autocomplete-item {
+  padding: 10px 16px;
+  font-size: .93rem;
+  color: var(--primary);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+  font-family: inherit;
+  border-bottom: 1px solid var(--gray-xlight);
+}
+#wup-app .seller-autocomplete-item:last-child { border-bottom: none; }
+#wup-app .seller-autocomplete-item:hover,
+#wup-app .seller-autocomplete-item.highlighted {
+  background: var(--orange-light);
+  color: var(--orange);
+}
+#wup-app .seller-autocomplete-item .seller-match {
+  font-weight: 700;
+}
+#wup-app .seller-divider {
+  grid-column: 1 / -1;
+  height: 1px;
+  background: var(--gray-light);
+  margin: 4px 0;
+}
+#wup-app .seller-section-label {
+  grid-column: 1 / -1;
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--gray-text);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
 /* Form action row */
 #wup-app .form-actions {
   display: flex;
@@ -1397,6 +1457,18 @@
             <div class="form-inner">
               <form id="booking-form" novalidate>
                 <div class="form-grid">
+                  <!-- Venditore (seller) -->
+                  <div class="form-group seller-field-wrapper">
+                    <label for="f-seller">Venditore <span class="req">*</span>
+                      <span class="seller-label-helper">Seleziona il tuo nome</span>
+                    </label>
+                    <input type="text" id="f-seller" autocomplete="off" placeholder="Cerca il tuo nome...">
+                    <input type="hidden" id="f-seller-id" value="">
+                    <div id="seller-autocomplete" class="seller-autocomplete-list hidden"></div>
+                    <span class="field-error hidden" id="err-seller"></span>
+                  </div>
+                  <div class="seller-divider"></div>
+                  <div class="seller-section-label">I tuoi dati</div>
                   <div class="form-group">
                     <label for="f-name">Nome <span class="req">*</span></label>
                     <input type="text" id="f-name" autocomplete="given-name" placeholder="Mario">
@@ -1570,7 +1642,7 @@ const COACH_META = {
   'coach_029': { photo: IMG_BASE+'coach_029.png', bio: 'Imprenditore e Mentor SBL, gestisce più aziende con sistemi, KPI e processi scalabili. Aiuta gli imprenditori a passare da operativi a strategici.',   category: 'business'     },
 };
 
-const state = { coaches:[], selectedCoach:null, selectedDate:null, selectedSlot:null, summaryCache:{}, slotsCache:{} };
+const state = { coaches:[], selectedCoach:null, selectedDate:null, selectedSlot:null, summaryCache:{}, slotsCache:{}, sellers:[] };
 
 window.wupShowCoaches = function() {
   document.getElementById('wup-page-coaches').classList.remove('hidden');
@@ -1630,6 +1702,88 @@ async function createBooking(data) {
   return await r.json();
 }
 
+async function fetchSellers() {
+  try {
+    const r = await fetch(API_URL + '?action=get_sellers');
+    const j = await r.json();
+    if (j.success && j.data && j.data.sellers) { state.sellers = j.data.sellers; }
+  } catch(e) { state.sellers = []; }
+}
+
+function initSellerAutocomplete() {
+  const input = document.getElementById('f-seller');
+  const hiddenInput = document.getElementById('f-seller-id');
+  const dropdown = document.getElementById('seller-autocomplete');
+  if (!input || !dropdown || !hiddenInput) return;
+
+  let highlightIdx = -1;
+
+  function renderDropdown(matches) {
+    dropdown.innerHTML = '';
+    highlightIdx = -1;
+    if (!matches.length) { hide(dropdown); return; }
+    matches.forEach(function(seller, idx) {
+      const item = document.createElement('div');
+      item.className = 'seller-autocomplete-item';
+      item.textContent = seller.nome + ' ' + seller.cognome;
+      item.dataset.idx = idx;
+      item.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        selectSeller(seller);
+      });
+      dropdown.appendChild(item);
+    });
+    show(dropdown);
+  }
+
+  function selectSeller(seller) {
+    input.value = seller.nome + ' ' + seller.cognome;
+    hiddenInput.value = seller.id;
+    input.classList.remove('error');
+    hide(document.getElementById('err-seller'));
+    hide(dropdown);
+  }
+
+  function updateHighlight() {
+    const items = dropdown.querySelectorAll('.seller-autocomplete-item');
+    items.forEach(function(el, i) { el.classList.toggle('highlighted', i === highlightIdx); });
+  }
+
+  input.addEventListener('input', function() {
+    hiddenInput.value = '';
+    const q = input.value.trim().toLowerCase();
+    if (q.length < 2) { hide(dropdown); return; }
+    const matches = state.sellers.filter(function(s) {
+      const full = (s.nome + ' ' + s.cognome).toLowerCase();
+      return full.indexOf(q) !== -1;
+    });
+    renderDropdown(matches);
+  });
+
+  input.addEventListener('keydown', function(e) {
+    const items = dropdown.querySelectorAll('.seller-autocomplete-item');
+    if (!items.length) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); highlightIdx = Math.min(highlightIdx + 1, items.length - 1); updateHighlight(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); highlightIdx = Math.max(highlightIdx - 1, 0); updateHighlight(); }
+    else if (e.key === 'Enter' && highlightIdx >= 0) {
+      e.preventDefault();
+      const idx = highlightIdx;
+      const q = input.value.trim().toLowerCase();
+      const matches = state.sellers.filter(function(s) { return (s.nome + ' ' + s.cognome).toLowerCase().indexOf(q) !== -1; });
+      if (matches[idx]) selectSeller(matches[idx]);
+    }
+  });
+
+  input.addEventListener('blur', function() { setTimeout(function() { hide(dropdown); }, 150); });
+  input.addEventListener('focus', function() {
+    const q = input.value.trim().toLowerCase();
+    if (q.length >= 2 && !hiddenInput.value) {
+      const matches = state.sellers.filter(function(s) { return (s.nome + ' ' + s.cognome).toLowerCase().indexOf(q) !== -1; });
+      renderDropdown(matches);
+    }
+  });
+}
+
 async function initIndexPage() {
   const c = document.getElementById('coaches-container'); if (!c) return;
   try {
@@ -1639,6 +1793,8 @@ async function initIndexPage() {
     if (!coaches || !coaches.length) { c.innerHTML='<p style="text-align:center;color:#6b7280;padding:48px">Nessun coach disponibile.</p>'; return; }
     renderCoaches(c, coaches);
   } catch(e) { c.innerHTML='<div class="alert alert-error"><span class="alert-icon">✕</span><span>Impossibile caricare i coach. Riprova.</span></div>'; }
+  fetchSellers();
+  initSellerAutocomplete();
 }
 
 function renderCoaches(container, coaches) {
@@ -1733,6 +1889,9 @@ async function initBookingPage(coach) {
   document.getElementById('btn-back-to-cal').onclick = function() { state.selectedSlot=null; showStep(1); };
   document.getElementById('btn-back-to-slots').onclick = function() { showStep(2); };
   document.getElementById('booking-form').onsubmit = async function(e) { e.preventDefault(); await submitBooking(); };
+  /* Reset seller field */
+  const sellerInput = document.getElementById('f-seller'); if (sellerInput) sellerInput.value = '';
+  const sellerHidden = document.getElementById('f-seller-id'); if (sellerHidden) sellerHidden.value = '';
 }
 
 function renderCoachInfoBar(coach) {
@@ -1851,6 +2010,10 @@ function onSlotSelected(slot) {
 function validateForm() {
   const fields=['name','surname','email','phone'], labels={name:'Nome',surname:'Cognome',email:'Email',phone:'Telefono'};
   let valid=true;
+  /* Validate seller */
+  const sellerInput=document.getElementById('f-seller'), sellerHidden=document.getElementById('f-seller-id'), errSeller=document.getElementById('err-seller');
+  hide(errSeller); if(sellerInput)sellerInput.classList.remove('error');
+  if (!sellerHidden||!sellerHidden.value) { if(errSeller){errSeller.textContent='Seleziona un venditore dalla lista.';show(errSeller);} if(sellerInput)sellerInput.classList.add('error'); valid=false; }
   fields.forEach(function(f) {
     const input=document.getElementById('f-'+f), errEl=document.getElementById('err-'+f);
     const val=input?input.value.trim():'';
@@ -1869,6 +2032,8 @@ async function submitBooking() {
   sb.disabled=true; hide(bt); show(bs);
   const data={
     coach_id:state.selectedCoach.id, start_datetime:state.selectedSlot.start,
+    seller_id:document.getElementById('f-seller-id').value.trim(),
+    seller_name:document.getElementById('f-seller').value.trim(),
     client_name:document.getElementById('f-name').value.trim(),
     client_surname:document.getElementById('f-surname').value.trim(),
     client_email:document.getElementById('f-email').value.trim(),
