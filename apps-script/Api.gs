@@ -680,6 +680,7 @@ function handleSellerBookings(params) {
         end_datetime:   String(b.end_datetime),
         notes:          String(b.notes || ''),
         status:         String(b.status),
+        cancel_token:   String(b.cancel_token || ''),
         esito:          String(b.esito || ''),
         salesforce_opportunity: String(b.salesforce_opportunity || ''),
         seller_id:      String(b.seller_id || ''),
