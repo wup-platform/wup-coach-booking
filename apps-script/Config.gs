@@ -38,10 +38,10 @@ const EVENT_DATE_END   = '2026-03-15';
 const DAYS_AHEAD_MAX = 30;
 
 // Ora minima prenotabile (fallback se il coach non ha working_hours_start)
-const BOOKING_WINDOW_START_HOUR = 8;
+const BOOKING_WINDOW_START_HOUR = 9;
 
 // Ora massima prenotabile (fallback se il coach non ha working_hours_end)
-const BOOKING_WINDOW_END_HOUR = 19;
+const BOOKING_WINDOW_END_HOUR = 18;
 
 // Timeout in millisecondi per LockService (30 secondi)
 const LOCK_TIMEOUT_MS = 30000;

@@ -196,6 +196,55 @@ function syncCoaches() {
 }
 
 /**
+ * Aggiunge Lombardi e Catan come nuovi coach e riattiva Rodriguez.
+ * Eseguire UNA VOLTA SOLA dall'editor Apps Script.
+ */
+function syncCoachesV2() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(SHEETS.COACHES);
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+
+  const colId     = headers.indexOf('id');
+  const colActive = headers.indexOf('active');
+
+  // Riattiva Rodriguez (coach_016)
+  let riattivati = 0;
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][colId] === 'coach_016') {
+      sheet.getRange(i + 1, colActive + 1).setValue('TRUE');
+      Logger.log('[RIATTIVATO] coach_016 - Rodriguez');
+      riattivati++;
+    }
+  }
+
+  // Nuovi coach
+  const existingIds = data.slice(1).map(function(r) { return r[colId]; });
+  const nuoviCoach = [
+    ['coach_030','Alessandro','Lombardi','alessandro.lombardi@smartbusinesslab.com','Sales','','','DA_INSERIRE','09:00','17:55',15,'TRUE'],
+    ['coach_031','Adrian','Catan','adrian.catan@smartbusinesslab.com','Sales','','','DA_INSERIRE','09:00','17:55',15,'TRUE'],
+  ];
+
+  let aggiunti = 0;
+  nuoviCoach.forEach(function(row) {
+    if (existingIds.indexOf(row[0]) === -1) {
+      sheet.appendRow(row);
+      Logger.log('[AGGIUNTO] ' + row[0] + ' - ' + row[1] + ' ' + row[2]);
+      aggiunti++;
+    } else {
+      Logger.log('[GIA PRESENTE] ' + row[0]);
+    }
+  });
+
+  SpreadsheetApp.getUi().alert(
+    'Sync V2 completato!\n' +
+    'Riattivati: ' + riattivati + '\n' +
+    'Aggiunti: ' + aggiunti + '\n\n' +
+    'Ora esegui setupCalendars() per creare i calendari dei nuovi coach.'
+  );
+}
+
+/**
  * STEP 1: Rimuove TUTTI gli eventi "NON DISPONIBILE" dai calendari coach
  * per i 3 giorni evento (13-14-15 marzo 2026).
  * Eseguire PRIMA di blockUnavailableSlots().
@@ -251,7 +300,7 @@ function clearOldBlocks() {
 
 /**
  * Aggiorna working hours e slot duration di TUTTI i coach attivi
- * a 08:15–19:15, slot 15 minuti.
+ * a 09:00–17:55, slot 15 minuti.
  * Eseguire UNA VOLTA per allineare i coach già esistenti nel foglio.
  */
 function updateAllCoachWorkingHours() {
@@ -271,12 +320,12 @@ function updateAllCoachWorkingHours() {
 
   let updated = 0;
   for (let i = 1; i < data.length; i++) {
-    sheet.getRange(i + 1, colStart + 1).setValue('08:15');
-    sheet.getRange(i + 1, colEnd + 1).setValue('19:15');
+    sheet.getRange(i + 1, colStart + 1).setValue('09:00');
+    sheet.getRange(i + 1, colEnd + 1).setValue('17:55');
     sheet.getRange(i + 1, colSlot + 1).setValue(15);
     updated++;
   }
-  Logger.log('Aggiornati ' + updated + ' coach: 08:15-19:15, slot 15min');
+  Logger.log('Aggiornati ' + updated + ' coach: 09:00-17:55, slot 15min');
 }
 
 /**
@@ -284,7 +333,8 @@ function updateAllCoachWorkingHours() {
  * in base alla scaletta WUP Marzo 2026.
  *
  * Scaletta aggiornata: 13-14-15 marzo 2026
- * Orario sessioni: 08:15–19:10 (slot 15min + 5min pausa)
+ * Orario sessioni: 09:00–17:55 (slot 15min + 5min pausa = step 20min)
+ * Generato da meet_the_coach_schedule (4).xlsx
  *
  * Eseguire DOPO clearOldBlocks().
  */
@@ -307,66 +357,111 @@ function blockUnavailableSlots() {
     };
   }
 
-  // Formato: { coachId, data, hInizio, mInizio, hFine, mFine, label }
+  // Formato: { coachId, data, hI, mI, hF, mF, label }
   var blocchi = [
     // ═══ VENERDI 13 MARZO ═══
-    { coachId: 'coach_001', data: '2026-03-13', hI:12, mI:55, hF:14, mF:50, label: 'De Marco - ven 12:55-14:50' },
-    { coachId: 'coach_003', data: '2026-03-13', hI:8,  mI:15, hF:11, mF:10, label: 'Colombo - ven 08:15-11:10' },
-    { coachId: 'coach_003', data: '2026-03-13', hI:13, mI:15, hF:14, mF:50, label: 'Colombo - ven 13:15-14:50' },
-    { coachId: 'coach_003', data: '2026-03-13', hI:17, mI:55, hF:19, mF:10, label: 'Colombo - ven 17:55-19:10' },
-    { coachId: 'coach_005', data: '2026-03-13', hI:8,  mI:15, hF:10, mF:10, label: 'Monza - ven 08:15-10:10' },
-    { coachId: 'coach_005', data: '2026-03-13', hI:12, mI:55, hF:15, mF:10, label: 'Monza - ven 12:55-15:10' },
-    { coachId: 'coach_005', data: '2026-03-13', hI:18, mI:35, hF:19, mF:10, label: 'Monza - ven 18:35-19:10' },
-    { coachId: 'coach_007', data: '2026-03-13', hI:8,  mI:15, hF:9,  mF:50, label: 'Pagliano - ven 08:15-09:50' },
-    { coachId: 'coach_007', data: '2026-03-13', hI:12, mI:55, hF:14, mF:30, label: 'Pagliano - ven 12:55-14:30' },
-    { coachId: 'coach_007', data: '2026-03-13', hI:15, mI:55, hF:19, mF:10, label: 'Pagliano - ven 15:55-19:10' },
-    { coachId: 'coach_015', data: '2026-03-13', hI:8,  mI:15, hF:15, mF:30, label: 'Lovallo - ven 08:15-15:30' },
-    { coachId: 'coach_017', data: '2026-03-13', hI:8,  mI:15, hF:9,  mF:30, label: 'Crestan - ven 08:15-09:30' },
-    { coachId: 'coach_017', data: '2026-03-13', hI:13, mI:35, hF:14, mF:30, label: 'Crestan - ven 13:35-14:30' },
-    { coachId: 'coach_026', data: '2026-03-13', hI:8,  mI:15, hF:10, mF:10, label: 'Cuoco - ven 08:15-10:10' },
-    { coachId: 'coach_026', data: '2026-03-13', hI:16, mI:15, hF:19, mF:10, label: 'Cuoco - ven 16:15-19:10' },
+    { coachId: 'coach_001', data: '2026-03-13', hI: 9, mI: 0, hF: 9, mF: 35, label: 'De Marco - ven 09:00-09:35' },
+    { coachId: 'coach_001', data: '2026-03-13', hI: 11, mI: 40, hF: 11, mF: 55, label: 'De Marco - ven 11:40-11:55' },
+    { coachId: 'coach_001', data: '2026-03-13', hI: 13, mI: 20, hF: 13, mF: 55, label: 'De Marco - ven 13:20-13:55' },
+    { coachId: 'coach_001', data: '2026-03-13', hI: 14, mI: 20, hF: 14, mF: 55, label: 'De Marco - ven 14:20-14:55' },
+    { coachId: 'coach_001', data: '2026-03-13', hI: 16, mI: 40, hF: 17, mF: 15, label: 'De Marco - ven 16:40-17:15' },
+    { coachId: 'coach_002', data: '2026-03-13', hI: 10, mI: 0, hF: 10, mF: 15, label: 'Garagiola - ven 10:00-10:15' },
+    { coachId: 'coach_002', data: '2026-03-13', hI: 11, mI: 0, hF: 11, mF: 15, label: 'Garagiola - ven 11:00-11:15' },
+    { coachId: 'coach_002', data: '2026-03-13', hI: 13, mI: 40, hF: 13, mF: 55, label: 'Garagiola - ven 13:40-13:55' },
+    { coachId: 'coach_002', data: '2026-03-13', hI: 14, mI: 20, hF: 15, mF: 15, label: 'Garagiola - ven 14:20-15:15' },
+    { coachId: 'coach_002', data: '2026-03-13', hI: 17, mI: 0, hF: 17, mF: 35, label: 'Garagiola - ven 17:00-17:35' },
+    { coachId: 'coach_003', data: '2026-03-13', hI: 9, mI: 0, hF: 10, mF: 55, label: 'Colombo - ven 09:00-10:55' },
+    { coachId: 'coach_003', data: '2026-03-13', hI: 13, mI: 20, hF: 15, mF: 15, label: 'Colombo - ven 13:20-15:15' },
+    { coachId: 'coach_004', data: '2026-03-13', hI: 10, mI: 20, hF: 10, mF: 35, label: 'Pasetto - ven 10:20-10:35' },
+    { coachId: 'coach_004', data: '2026-03-13', hI: 13, mI: 0, hF: 13, mF: 55, label: 'Pasetto - ven 13:00-13:55' },
+    { coachId: 'coach_004', data: '2026-03-13', hI: 16, mI: 20, hF: 16, mF: 55, label: 'Pasetto - ven 16:20-16:55' },
+    { coachId: 'coach_005', data: '2026-03-13', hI: 9, mI: 0, hF: 10, mF: 15, label: 'Monza - ven 09:00-10:15' },
+    { coachId: 'coach_005', data: '2026-03-13', hI: 13, mI: 0, hF: 13, mF: 55, label: 'Monza - ven 13:00-13:55' },
+    { coachId: 'coach_005', data: '2026-03-13', hI: 14, mI: 20, hF: 15, mF: 35, label: 'Monza - ven 14:20-15:35' },
+    { coachId: 'coach_005', data: '2026-03-13', hI: 17, mI: 20, hF: 17, mF: 55, label: 'Monza - ven 17:20-17:55' },
+    { coachId: 'coach_006', data: '2026-03-13', hI: 10, mI: 0, hF: 10, mF: 15, label: 'Marras - ven 10:00-10:15' },
+    { coachId: 'coach_006', data: '2026-03-13', hI: 11, mI: 0, hF: 11, mF: 35, label: 'Marras - ven 11:00-11:35' },
+    { coachId: 'coach_006', data: '2026-03-13', hI: 13, mI: 20, hF: 13, mF: 55, label: 'Marras - ven 13:20-13:55' },
+    { coachId: 'coach_006', data: '2026-03-13', hI: 14, mI: 20, hF: 14, mF: 35, label: 'Marras - ven 14:20-14:35' },
+    { coachId: 'coach_006', data: '2026-03-13', hI: 15, mI: 40, hF: 15, mF: 55, label: 'Marras - ven 15:40-15:55' },
+    { coachId: 'coach_006', data: '2026-03-13', hI: 17, mI: 0, hF: 17, mF: 35, label: 'Marras - ven 17:00-17:35' },
+    { coachId: 'coach_007', data: '2026-03-13', hI: 9, mI: 0, hF: 9, mF: 35, label: 'Pagliano - ven 09:00-09:35' },
+    { coachId: 'coach_007', data: '2026-03-13', hI: 13, mI: 0, hF: 13, mF: 55, label: 'Pagliano - ven 13:00-13:55' },
+    { coachId: 'coach_007', data: '2026-03-13', hI: 14, mI: 20, hF: 14, mF: 55, label: 'Pagliano - ven 14:20-14:55' },
+    { coachId: 'coach_007', data: '2026-03-13', hI: 16, mI: 20, hF: 17, mF: 55, label: 'Pagliano - ven 16:20-17:55' },
+    { coachId: 'coach_009', data: '2026-03-13', hI: 11, mI: 0, hF: 11, mF: 15, label: 'Ortelli - ven 11:00-11:15' },
+    { coachId: 'coach_009', data: '2026-03-13', hI: 14, mI: 0, hF: 14, mF: 15, label: 'Ortelli - ven 14:00-14:15' },
+    { coachId: 'coach_009', data: '2026-03-13', hI: 15, mI: 20, hF: 15, mF: 35, label: 'Ortelli - ven 15:20-15:35' },
+    { coachId: 'coach_009', data: '2026-03-13', hI: 17, mI: 40, hF: 17, mF: 55, label: 'Ortelli - ven 17:40-17:55' },
+    { coachId: 'coach_010', data: '2026-03-13', hI: 11, mI: 0, hF: 11, mF: 15, label: 'Redi - ven 11:00-11:15' },
+    { coachId: 'coach_010', data: '2026-03-13', hI: 14, mI: 0, hF: 14, mF: 15, label: 'Redi - ven 14:00-14:15' },
+    { coachId: 'coach_010', data: '2026-03-13', hI: 15, mI: 20, hF: 15, mF: 35, label: 'Redi - ven 15:20-15:35' },
+    { coachId: 'coach_010', data: '2026-03-13', hI: 17, mI: 40, hF: 17, mF: 55, label: 'Redi - ven 17:40-17:55' },
+    { coachId: 'coach_011', data: '2026-03-13', hI: 10, mI: 0, hF: 10, mF: 35, label: 'Fasciano - ven 10:00-10:35' },
+    { coachId: 'coach_011', data: '2026-03-13', hI: 12, mI: 0, hF: 12, mF: 35, label: 'Fasciano - ven 12:00-12:35' },
+    { coachId: 'coach_011', data: '2026-03-13', hI: 13, mI: 0, hF: 13, mF: 35, label: 'Fasciano - ven 13:00-13:35' },
+    { coachId: 'coach_011', data: '2026-03-13', hI: 15, mI: 0, hF: 15, mF: 15, label: 'Fasciano - ven 15:00-15:15' },
+    { coachId: 'coach_011', data: '2026-03-13', hI: 16, mI: 40, hF: 16, mF: 55, label: 'Fasciano - ven 16:40-16:55' },
+    { coachId: 'coach_013', data: '2026-03-13', hI: 9, mI: 0, hF: 9, mF: 55, label: 'Sgambato - ven 09:00-09:55' },
+    { coachId: 'coach_013', data: '2026-03-13', hI: 11, mI: 20, hF: 11, mF: 35, label: 'Sgambato - ven 11:20-11:35' },
+    { coachId: 'coach_015', data: '2026-03-13', hI: 9, mI: 0, hF: 15, mF: 55, label: 'Lovallo - ven 09:00-15:55' },
+    { coachId: 'coach_016', data: '2026-03-13', hI: 9, mI: 0, hF: 14, mF: 15, label: 'Rodriguez - ven 09:00-14:15' },
+    { coachId: 'coach_017', data: '2026-03-13', hI: 9, mI: 0, hF: 9, mF: 15, label: 'Crestan - ven 09:00-09:15' },
+    { coachId: 'coach_017', data: '2026-03-13', hI: 13, mI: 40, hF: 14, mF: 55, label: 'Crestan - ven 13:40-14:55' },
+    { coachId: 'coach_018', data: '2026-03-13', hI: 10, mI: 0, hF: 10, mF: 15, label: 'Migliaccio - ven 10:00-10:15' },
+    { coachId: 'coach_018', data: '2026-03-13', hI: 12, mI: 40, hF: 12, mF: 55, label: 'Migliaccio - ven 12:40-12:55' },
+    { coachId: 'coach_018', data: '2026-03-13', hI: 14, mI: 40, hF: 14, mF: 55, label: 'Migliaccio - ven 14:40-14:55' },
+    { coachId: 'coach_018', data: '2026-03-13', hI: 16, mI: 20, hF: 16, mF: 35, label: 'Migliaccio - ven 16:20-16:35' },
+    { coachId: 'coach_026', data: '2026-03-13', hI: 9, mI: 0, hF: 9, mF: 55, label: 'Cuoco - ven 09:00-09:55' },
+    { coachId: 'coach_026', data: '2026-03-13', hI: 16, mI: 40, hF: 17, mF: 55, label: 'Cuoco - ven 16:40-17:55' },
+    { coachId: 'coach_029', data: '2026-03-13', hI: 10, mI: 0, hF: 10, mF: 15, label: 'Salvato - ven 10:00-10:15' },
+    { coachId: 'coach_029', data: '2026-03-13', hI: 12, mI: 40, hF: 12, mF: 55, label: 'Salvato - ven 12:40-12:55' },
+    { coachId: 'coach_029', data: '2026-03-13', hI: 14, mI: 40, hF: 14, mF: 55, label: 'Salvato - ven 14:40-14:55' },
+    { coachId: 'coach_029', data: '2026-03-13', hI: 16, mI: 20, hF: 16, mF: 35, label: 'Salvato - ven 16:20-16:35' },
 
     // ═══ SABATO 14 MARZO ═══
-    { coachId: 'coach_001', data: '2026-03-14', hI:8,  mI:15, hF:19, mF:10, label: 'De Marco - sab TUTTO IL GIORNO' },
-    { coachId: 'coach_003', data: '2026-03-14', hI:8,  mI:15, hF:14, mF:30, label: 'Colombo - sab 08:15-14:30' },
-    { coachId: 'coach_003', data: '2026-03-14', hI:16, mI:55, hF:19, mF:10, label: 'Colombo - sab 16:55-19:10' },
-    { coachId: 'coach_007', data: '2026-03-14', hI:8,  mI:15, hF:15, mF:30, label: 'Pagliano - sab 08:15-15:30' },
-    { coachId: 'coach_007', data: '2026-03-14', hI:16, mI:55, hF:19, mF:10, label: 'Pagliano - sab 16:55-19:10' },
-    { coachId: 'coach_009', data: '2026-03-14', hI:14, mI:55, hF:15, mF:50, label: 'Ortelli - sab 14:55-15:50' },
-    { coachId: 'coach_010', data: '2026-03-14', hI:14, mI:55, hF:15, mF:50, label: 'Redi - sab 14:55-15:50' },
-    { coachId: 'coach_014', data: '2026-03-14', hI:8,  mI:15, hF:9,  mF:30, label: 'Acquistapace - sab 08:15-09:30' },
-    { coachId: 'coach_014', data: '2026-03-14', hI:12, mI:55, hF:14, mF:50, label: 'Acquistapace - sab 12:55-14:50' },
-    { coachId: 'coach_015', data: '2026-03-14', hI:8,  mI:15, hF:19, mF:10, label: 'Lovallo - sab TUTTO IL GIORNO' },
-    { coachId: 'coach_017', data: '2026-03-14', hI:8,  mI:15, hF:9,  mF:30, label: 'Crestan - sab 08:15-09:30' },
-    { coachId: 'coach_017', data: '2026-03-14', hI:13, mI:35, hF:14, mF:30, label: 'Crestan - sab 13:35-14:30' },
-    { coachId: 'coach_018', data: '2026-03-14', hI:14, mI:55, hF:15, mF:50, label: 'Migliaccio - sab 14:55-15:50' },
-    { coachId: 'coach_026', data: '2026-03-14', hI:8,  mI:15, hF:14, mF:10, label: 'Cuoco - sab 08:15-14:10' },
-    { coachId: 'coach_026', data: '2026-03-14', hI:17, mI:15, hF:19, mF:10, label: 'Cuoco - sab 17:15-19:10' },
-    { coachId: 'coach_029', data: '2026-03-14', hI:14, mI:55, hF:15, mF:50, label: 'Salvato - sab 14:55-15:50' },
+    { coachId: 'coach_001', data: '2026-03-14', hI: 9, mI: 0, hF: 17, mF: 55, label: 'De Marco - sab TUTTO IL GIORNO' },
+    { coachId: 'coach_003', data: '2026-03-14', hI: 9, mI: 0, hF: 15, mF: 15, label: 'Colombo - sab 09:00-15:15' },
+    { coachId: 'coach_003', data: '2026-03-14', hI: 17, mI: 40, hF: 17, mF: 55, label: 'Colombo - sab 17:40-17:55' },
+    { coachId: 'coach_007', data: '2026-03-14', hI: 9, mI: 0, hF: 16, mF: 15, label: 'Pagliano - sab 09:00-16:15' },
+    { coachId: 'coach_007', data: '2026-03-14', hI: 17, mI: 40, hF: 17, mF: 55, label: 'Pagliano - sab 17:40-17:55' },
+    { coachId: 'coach_009', data: '2026-03-14', hI: 15, mI: 40, hF: 16, mF: 35, label: 'Ortelli - sab 15:40-16:35' },
+    { coachId: 'coach_010', data: '2026-03-14', hI: 15, mI: 40, hF: 16, mF: 35, label: 'Redi - sab 15:40-16:35' },
+    { coachId: 'coach_014', data: '2026-03-14', hI: 9, mI: 0, hF: 10, mF: 15, label: 'Acquistapace - sab 09:00-10:15' },
+    { coachId: 'coach_014', data: '2026-03-14', hI: 13, mI: 40, hF: 15, mF: 35, label: 'Acquistapace - sab 13:40-15:35' },
+    { coachId: 'coach_015', data: '2026-03-14', hI: 9, mI: 0, hF: 17, mF: 55, label: 'Lovallo - sab TUTTO IL GIORNO' },
+    { coachId: 'coach_016', data: '2026-03-14', hI: 9, mI: 0, hF: 9, mF: 35, label: 'Rodriguez - sab 09:00-09:35' },
+    { coachId: 'coach_016', data: '2026-03-14', hI: 12, mI: 40, hF: 17, mF: 55, label: 'Rodriguez - sab 12:40-17:55' },
+    { coachId: 'coach_017', data: '2026-03-14', hI: 9, mI: 0, hF: 10, mF: 15, label: 'Crestan - sab 09:00-10:15' },
+    { coachId: 'coach_017', data: '2026-03-14', hI: 14, mI: 20, hF: 15, mF: 15, label: 'Crestan - sab 14:20-15:15' },
+    { coachId: 'coach_018', data: '2026-03-14', hI: 15, mI: 40, hF: 16, mF: 35, label: 'Migliaccio - sab 15:40-16:35' },
+    { coachId: 'coach_026', data: '2026-03-14', hI: 9, mI: 0, hF: 14, mF: 55, label: 'Cuoco - sab 09:00-14:55' },
+    { coachId: 'coach_029', data: '2026-03-14', hI: 15, mI: 40, hF: 16, mF: 35, label: 'Salvato - sab 15:40-16:35' },
 
     // ═══ DOMENICA 15 MARZO ═══
-    { coachId: 'coach_001', data: '2026-03-15', hI:8,  mI:15, hF:13, mF:10, label: 'De Marco - dom 08:15-13:10' },
-    { coachId: 'coach_002', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Garagiola - dom 10:55-11:50' },
-    { coachId: 'coach_003', data: '2026-03-15', hI:8,  mI:15, hF:10, mF:50, label: 'Colombo - dom 08:15-10:50' },
-    { coachId: 'coach_003', data: '2026-03-15', hI:12, mI:55, hF:14, mF:30, label: 'Colombo - dom 12:55-14:30' },
-    { coachId: 'coach_003', data: '2026-03-15', hI:17, mI:55, hF:19, mF:10, label: 'Colombo - dom 17:55-19:10' },
-    { coachId: 'coach_004', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Pasetto - dom 10:55-11:50' },
-    { coachId: 'coach_005', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Monza - dom 10:55-11:50' },
-    { coachId: 'coach_006', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Marras - dom 10:55-11:50' },
-    { coachId: 'coach_007', data: '2026-03-15', hI:8,  mI:15, hF:10, mF:30, label: 'Pagliano - dom 08:15-10:30' },
-    { coachId: 'coach_007', data: '2026-03-15', hI:12, mI:55, hF:16, mF:10, label: 'Pagliano - dom 12:55-16:10' },
-    { coachId: 'coach_007', data: '2026-03-15', hI:18, mI:35, hF:19, mF:10, label: 'Pagliano - dom 18:35-19:10' },
-    { coachId: 'coach_011', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Fasciano - dom 10:55-11:50' },
-    { coachId: 'coach_013', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Sgambato - dom 10:55-11:50' },
-    { coachId: 'coach_014', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Acquistapace - dom 10:55-11:50' },
-    { coachId: 'coach_015', data: '2026-03-15', hI:8,  mI:15, hF:10, mF:10, label: 'Lovallo - dom 08:15-10:10' },
-    { coachId: 'coach_015', data: '2026-03-15', hI:12, mI:55, hF:19, mF:10, label: 'Lovallo - dom 12:55-19:10' },
-    { coachId: 'coach_017', data: '2026-03-15', hI:8,  mI:15, hF:9,  mF:30, label: 'Crestan - dom 08:15-09:30' },
-    { coachId: 'coach_017', data: '2026-03-15', hI:13, mI:35, hF:14, mF:30, label: 'Crestan - dom 13:35-14:30' },
-    { coachId: 'coach_024', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Bertacchi - dom 10:55-11:50' },
-    { coachId: 'coach_026', data: '2026-03-15', hI:8,  mI:15, hF:11, mF:30, label: 'Cuoco - dom 08:15-11:30' },
-    { coachId: 'coach_026', data: '2026-03-15', hI:18, mI:35, hF:19, mF:10, label: 'Cuoco - dom 18:35-19:10' },
-    { coachId: 'coach_027', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Lavorenti - dom 10:55-11:50' },
+    { coachId: 'coach_001', data: '2026-03-15', hI: 9, mI: 0, hF: 13, mF: 55, label: 'De Marco - dom 09:00-13:55' },
+    { coachId: 'coach_002', data: '2026-03-15', hI: 11, mI: 40, hF: 12, mF: 35, label: 'Garagiola - dom 11:40-12:35' },
+    { coachId: 'coach_003', data: '2026-03-15', hI: 9, mI: 0, hF: 11, mF: 35, label: 'Colombo - dom 09:00-11:35' },
+    { coachId: 'coach_003', data: '2026-03-15', hI: 13, mI: 40, hF: 15, mF: 15, label: 'Colombo - dom 13:40-15:15' },
+    { coachId: 'coach_004', data: '2026-03-15', hI: 11, mI: 40, hF: 12, mF: 35, label: 'Pasetto - dom 11:40-12:35' },
+    { coachId: 'coach_005', data: '2026-03-15', hI: 11, mI: 40, hF: 12, mF: 35, label: 'Monza - dom 11:40-12:35' },
+    { coachId: 'coach_006', data: '2026-03-15', hI: 11, mI: 40, hF: 12, mF: 35, label: 'Marras - dom 11:40-12:35' },
+    { coachId: 'coach_007', data: '2026-03-15', hI: 9, mI: 0, hF: 11, mF: 15, label: 'Pagliano - dom 09:00-11:15' },
+    { coachId: 'coach_007', data: '2026-03-15', hI: 13, mI: 40, hF: 16, mF: 55, label: 'Pagliano - dom 13:40-16:55' },
+    { coachId: 'coach_011', data: '2026-03-15', hI: 11, mI: 40, hF: 12, mF: 35, label: 'Fasciano - dom 11:40-12:35' },
+    { coachId: 'coach_013', data: '2026-03-15', hI: 11, mI: 40, hF: 12, mF: 35, label: 'Sgambato - dom 11:40-12:35' },
+    { coachId: 'coach_014', data: '2026-03-15', hI: 11, mI: 40, hF: 12, mF: 35, label: 'Acquistapace - dom 11:40-12:35' },
+    { coachId: 'coach_015', data: '2026-03-15', hI: 9, mI: 0, hF: 10, mF: 55, label: 'Lovallo - dom 09:00-10:55' },
+    { coachId: 'coach_015', data: '2026-03-15', hI: 13, mI: 40, hF: 17, mF: 55, label: 'Lovallo - dom 13:40-17:55' },
+    { coachId: 'coach_016', data: '2026-03-15', hI: 9, mI: 0, hF: 9, mF: 35, label: 'Rodriguez - dom 09:00-09:35' },
+    { coachId: 'coach_016', data: '2026-03-15', hI: 12, mI: 40, hF: 13, mF: 55, label: 'Rodriguez - dom 12:40-13:55' },
+    { coachId: 'coach_016', data: '2026-03-15', hI: 15, mI: 20, hF: 15, mF: 35, label: 'Rodriguez - dom 15:20-15:35' },
+    { coachId: 'coach_016', data: '2026-03-15', hI: 17, mI: 20, hF: 17, mF: 35, label: 'Rodriguez - dom 17:20-17:35' },
+    { coachId: 'coach_017', data: '2026-03-15', hI: 9, mI: 0, hF: 10, mF: 15, label: 'Crestan - dom 09:00-10:15' },
+    { coachId: 'coach_017', data: '2026-03-15', hI: 14, mI: 20, hF: 15, mF: 15, label: 'Crestan - dom 14:20-15:15' },
+    { coachId: 'coach_024', data: '2026-03-15', hI: 11, mI: 40, hF: 12, mF: 35, label: 'Bertacchi - dom 11:40-12:35' },
+    { coachId: 'coach_026', data: '2026-03-15', hI: 9, mI: 0, hF: 12, mF: 15, label: 'Cuoco - dom 09:00-12:15' },
+    { coachId: 'coach_027', data: '2026-03-15', hI: 11, mI: 40, hF: 12, mF: 35, label: 'Lavorenti - dom 11:40-12:35' },
   ];
 
   let ok = 0;
