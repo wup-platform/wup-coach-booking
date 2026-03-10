@@ -14,15 +14,19 @@ function getAvailableSlots(coach, dateStr) {
     const testDate = new Date(year, month, day);
     void testDate; // nessun blocco per giorno della settimana – gestito dal calendario
 
-    const startHour = parseInt(coach.working_hours_start) || BOOKING_WINDOW_START_HOUR;
-    const endHour   = parseInt(coach.working_hours_end)   || BOOKING_WINDOW_END_HOUR;
-    const slotMin   = parseInt(coach.slot_duration_min)   || SLOT_DURATION_DEFAULT_MIN;
+    const startParts = String(coach.working_hours_start || '').split(':');
+    const startHour  = parseInt(startParts[0]) || BOOKING_WINDOW_START_HOUR;
+    const startMin   = parseInt(startParts[1]) || 0;
+    const endParts   = String(coach.working_hours_end || '').split(':');
+    const endHour    = parseInt(endParts[0]) || BOOKING_WINDOW_END_HOUR;
+    const endMin     = parseInt(endParts[1]) || 0;
+    const slotMin    = parseInt(coach.slot_duration_min) || SLOT_DURATION_DEFAULT_MIN;
 
     const calendar = CalendarApp.getCalendarById(coach.calendar_managed_id);
     if (!calendar) throw new Error('Calendario non trovato per il coach: ' + coach.id);
 
-    const dayStart = new Date(year, month, day, startHour, 0, 0);
-    const dayEnd   = new Date(year, month, day, endHour, 0, 0);
+    const dayStart = new Date(year, month, day, startHour, startMin, 0);
+    const dayEnd   = new Date(year, month, day, endHour, endMin, 0);
     const now      = new Date();
 
     const existingEvents = calendar.getEvents(dayStart, dayEnd);

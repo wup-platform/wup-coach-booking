@@ -168,12 +168,12 @@ function syncCoaches() {
   // Nuovi coach da aggiungere (solo se non già presenti)
   const existingIds = data.slice(1).map(function(r) { return r[colId]; });
   const nuoviCoach = [
-    ['coach_024','Christian','Bertacchi','christian.bertacchi@alfiobardolla.com','Coach','','','DA_INSERIRE','09:00','18:00',20,'TRUE'],
-    ['coach_025','Giacomo','Bertuso','giacomo.bertuso@alfiobardolla.com','Coach','','','DA_INSERIRE','09:00','18:00',20,'FALSE'],
-    ['coach_026','Carlo','Cuoco','carlo.cuoco@alfiobardolla.com','Coach','','','DA_INSERIRE','09:00','18:00',20,'TRUE'],
-    ['coach_027','Paolo','Lavorenti','paolo.lavorenti@alfiobardolla.com','Coach','','','DA_INSERIRE','09:00','18:00',20,'TRUE'],
-    ['coach_028','Clara','Nicoloso','clara.nicoloso@alfiobardolla.com','Coach','','','DA_INSERIRE','09:00','18:00',20,'FALSE'],
-    ['coach_029','Emanuele','Salvato','emanuele.salvato@smartbusinesslab.com','Mentor','','','DA_INSERIRE','09:00','18:00',20,'TRUE'],
+    ['coach_024','Christian','Bertacchi','christian.bertacchi@alfiobardolla.com','Coach','','','DA_INSERIRE','08:15','19:15',15,'TRUE'],
+    ['coach_025','Giacomo','Bertuso','giacomo.bertuso@alfiobardolla.com','Coach','','','DA_INSERIRE','08:15','19:15',15,'FALSE'],
+    ['coach_026','Carlo','Cuoco','carlo.cuoco@alfiobardolla.com','Coach','','','DA_INSERIRE','08:15','19:15',15,'TRUE'],
+    ['coach_027','Paolo','Lavorenti','paolo.lavorenti@alfiobardolla.com','Coach','','','DA_INSERIRE','08:15','19:15',15,'TRUE'],
+    ['coach_028','Clara','Nicoloso','clara.nicoloso@alfiobardolla.com','Coach','','','DA_INSERIRE','08:15','19:15',15,'FALSE'],
+    ['coach_029','Emanuele','Salvato','emanuele.salvato@smartbusinesslab.com','Mentor','','','DA_INSERIRE','08:15','19:15',15,'TRUE'],
   ];
 
   let aggiunti = 0;
@@ -250,12 +250,41 @@ function clearOldBlocks() {
 }
 
 /**
+ * Aggiorna working hours e slot duration di TUTTI i coach attivi
+ * a 08:15–19:15, slot 15 minuti.
+ * Eseguire UNA VOLTA per allineare i coach già esistenti nel foglio.
+ */
+function updateAllCoachWorkingHours() {
+  const ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(SHEETS.COACHES);
+  const data  = sheet.getDataRange().getValues();
+  const headers = data[0].map(function(h){ return String(h).trim().toLowerCase(); });
+
+  const colStart = headers.indexOf('working_hours_start');
+  const colEnd   = headers.indexOf('working_hours_end');
+  const colSlot  = headers.indexOf('slot_duration_min');
+
+  if (colStart === -1 || colEnd === -1 || colSlot === -1) {
+    Logger.log('ERRORE: colonne working_hours o slot_duration non trovate');
+    return;
+  }
+
+  let updated = 0;
+  for (let i = 1; i < data.length; i++) {
+    sheet.getRange(i + 1, colStart + 1).setValue('08:15');
+    sheet.getRange(i + 1, colEnd + 1).setValue('19:15');
+    sheet.getRange(i + 1, colSlot + 1).setValue(15);
+    updated++;
+  }
+  Logger.log('Aggiornati ' + updated + ' coach: 08:15-19:15, slot 15min');
+}
+
+/**
  * STEP 2: Crea eventi di blocco "NON DISPONIBILE" nei calendari coach
  * in base alla scaletta WUP Marzo 2026.
  *
  * Scaletta aggiornata: 13-14-15 marzo 2026
- * Orario sessioni: 08:15–19:00 (slot 15min + 5min pausa)
- * Working hours sistema: 09:00–18:00
+ * Orario sessioni: 08:15–19:10 (slot 15min + 5min pausa)
  *
  * Eseguire DOPO clearOldBlocks().
  */
