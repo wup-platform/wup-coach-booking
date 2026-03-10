@@ -1563,11 +1563,11 @@ const COACH_META = {
   'coach_017': { photo: IMG_BASE+'coach_017.png', bio: 'Investitore dinamico nel mercato libero, attivo in cessioni preliminari, appassionato di opportunità immobiliari e crescita personale.',            category: 'immobiliare'  },
   'coach_018': { photo: IMG_BASE+'coach_018.png', bio: 'Co-fondatore di Connessione Finanziaria, gestisce diverse aziende nei settori automotive, Blockchain e trading immobiliare.',                      category: 'business'     },
   'coach_024': { photo: IMG_BASE+'coach_024.png', bio: 'Trader esperto in Forex e mercati azionari.',                                                                                                    category: 'trading'      },
-  'coach_025': { photo: null,                     bio: '',                                                                                                                                                  category: 'trading'      },
+
   'coach_026': { photo: IMG_BASE+'coach_026.png', bio: 'Coach ABTG esperto in compravendite, aste e ristrutturazioni.',                                                                                      category: 'immobiliare'  },
   'coach_027': { photo: IMG_BASE+'coach_027.png', bio: 'Trader esperto in Forex e strategie di investimento.',                                                                                           category: 'trading'      },
-  'coach_028': { photo: IMG_BASE+'coach_028.png', bio: 'Coach e formatrice esperta in comunicazione e PNL.',                                                                                               category: 'mindset'      },
-  'coach_029': { photo: null,                     bio: 'Business Mentor SBL.',                                                                                                                              category: 'business'     },
+
+  'coach_029': { photo: IMG_BASE+'coach_029.png', bio: 'Imprenditore e Mentor SBL, gestisce più aziende con sistemi, KPI e processi scalabili. Aiuta gli imprenditori a passare da operativi a strategici.',   category: 'business'     },
 };
 
 const state = { coaches:[], selectedCoach:null, selectedDate:null, selectedSlot:null, summaryCache:{}, slotsCache:{} };
@@ -1888,6 +1888,7 @@ async function submitBooking() {
       showStep(4);
     } else {
       if (result.code==='SLOT_NOT_AVAILABLE') { showAlert('error','Slot già prenotato. Seleziona un altro orario.'); showStep(2); delete state.slotsCache[state.selectedCoach.id+'_'+state.selectedDate]; state.selectedSlot=null; }
+      else if (result.code==='MAX_BOOKINGS_REACHED') { showAlert('error','Hai già raggiunto il limite massimo di 2 prenotazioni con questa email. Per assistenza, contatta l\'organizzazione.'); }
       else showAlert('error', result.error||'Errore durante la prenotazione. Riprova.');
     }
   } catch(e) { showAlert('error','Errore di connessione. Riprova.'); }
