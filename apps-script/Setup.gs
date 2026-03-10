@@ -281,64 +281,62 @@ function blockUnavailableSlots() {
   // Formato: { coachId, data, hInizio, mInizio, hFine, mFine, label }
   var blocchi = [
     // ═══ VENERDI 13 MARZO ═══
-    // De Marco: occupato 12:55-14:50
-    { coachId: 'coach_007', data: '2026-03-13', hI:12, mI:55, hF:14, mF:50, label: 'De Marco - ven 12:55-14:50' },
-    // Monza: occupato 08:15-10:10, 12:55-15:10, 18:35-19:10
-    { coachId: 'coach_004', data: '2026-03-13', hI:8,  mI:15, hF:10, mF:10, label: 'Monza - ven 08:15-10:10' },
-    { coachId: 'coach_004', data: '2026-03-13', hI:12, mI:55, hF:15, mF:10, label: 'Monza - ven 12:55-15:10' },
-    { coachId: 'coach_004', data: '2026-03-13', hI:18, mI:35, hF:19, mF:10, label: 'Monza - ven 18:35-19:10' },
-    // Pagliano: occupata 12:55-14:50
-    { coachId: 'coach_006', data: '2026-03-13', hI:12, mI:55, hF:14, mF:50, label: 'Pagliano - ven 12:55-14:50' },
-    // Lovallo: occupata 08:15-15:30 (tutto il mattino + primo pomeriggio)
+    { coachId: 'coach_001', data: '2026-03-13', hI:12, mI:55, hF:14, mF:50, label: 'De Marco - ven 12:55-14:50' },
+    { coachId: 'coach_003', data: '2026-03-13', hI:8,  mI:15, hF:11, mF:10, label: 'Colombo - ven 08:15-11:10' },
+    { coachId: 'coach_003', data: '2026-03-13', hI:13, mI:15, hF:14, mF:50, label: 'Colombo - ven 13:15-14:50' },
+    { coachId: 'coach_003', data: '2026-03-13', hI:17, mI:55, hF:19, mF:10, label: 'Colombo - ven 17:55-19:10' },
+    { coachId: 'coach_005', data: '2026-03-13', hI:8,  mI:15, hF:10, mF:10, label: 'Monza - ven 08:15-10:10' },
+    { coachId: 'coach_005', data: '2026-03-13', hI:12, mI:55, hF:15, mF:10, label: 'Monza - ven 12:55-15:10' },
+    { coachId: 'coach_005', data: '2026-03-13', hI:18, mI:35, hF:19, mF:10, label: 'Monza - ven 18:35-19:10' },
+    { coachId: 'coach_007', data: '2026-03-13', hI:8,  mI:15, hF:9,  mF:50, label: 'Pagliano - ven 08:15-09:50' },
+    { coachId: 'coach_007', data: '2026-03-13', hI:12, mI:55, hF:14, mF:30, label: 'Pagliano - ven 12:55-14:30' },
+    { coachId: 'coach_007', data: '2026-03-13', hI:15, mI:55, hF:19, mF:10, label: 'Pagliano - ven 15:55-19:10' },
     { coachId: 'coach_015', data: '2026-03-13', hI:8,  mI:15, hF:15, mF:30, label: 'Lovallo - ven 08:15-15:30' },
+    { coachId: 'coach_017', data: '2026-03-13', hI:8,  mI:15, hF:9,  mF:30, label: 'Crestan - ven 08:15-09:30' },
+    { coachId: 'coach_017', data: '2026-03-13', hI:13, mI:35, hF:14, mF:30, label: 'Crestan - ven 13:35-14:30' },
+    { coachId: 'coach_026', data: '2026-03-13', hI:8,  mI:15, hF:10, mF:10, label: 'Cuoco - ven 08:15-10:10' },
+    { coachId: 'coach_026', data: '2026-03-13', hI:16, mI:15, hF:19, mF:10, label: 'Cuoco - ven 16:15-19:10' },
 
     // ═══ SABATO 14 MARZO ═══
-    // De Marco: occupato TUTTO IL GIORNO 08:15-19:10
-    { coachId: 'coach_007', data: '2026-03-14', hI:8,  mI:15, hF:19, mF:10, label: 'De Marco - sab TUTTO IL GIORNO' },
-    // Pagliano: occupata 08:15-14:50
-    { coachId: 'coach_006', data: '2026-03-14', hI:8,  mI:15, hF:14, mF:50, label: 'Pagliano - sab 08:15-14:50' },
-    // Colombo: occupato 12:35-13:10
-    { coachId: 'coach_002', data: '2026-03-14', hI:12, mI:35, hF:13, mF:10, label: 'Colombo - sab 12:35-13:10' },
-    // Acquistapace: occupato 08:15-09:30 e 12:55-14:50
+    { coachId: 'coach_001', data: '2026-03-14', hI:8,  mI:15, hF:19, mF:10, label: 'De Marco - sab TUTTO IL GIORNO' },
+    { coachId: 'coach_003', data: '2026-03-14', hI:8,  mI:15, hF:14, mF:30, label: 'Colombo - sab 08:15-14:30' },
+    { coachId: 'coach_003', data: '2026-03-14', hI:16, mI:55, hF:19, mF:10, label: 'Colombo - sab 16:55-19:10' },
+    { coachId: 'coach_007', data: '2026-03-14', hI:8,  mI:15, hF:15, mF:30, label: 'Pagliano - sab 08:15-15:30' },
+    { coachId: 'coach_007', data: '2026-03-14', hI:16, mI:55, hF:19, mF:10, label: 'Pagliano - sab 16:55-19:10' },
+    { coachId: 'coach_009', data: '2026-03-14', hI:14, mI:55, hF:15, mF:50, label: 'Ortelli - sab 14:55-15:50' },
+    { coachId: 'coach_010', data: '2026-03-14', hI:14, mI:55, hF:15, mF:50, label: 'Redi - sab 14:55-15:50' },
     { coachId: 'coach_014', data: '2026-03-14', hI:8,  mI:15, hF:9,  mF:30, label: 'Acquistapace - sab 08:15-09:30' },
     { coachId: 'coach_014', data: '2026-03-14', hI:12, mI:55, hF:14, mF:50, label: 'Acquistapace - sab 12:55-14:50' },
-    // Lovallo: occupata TUTTO IL GIORNO 08:15-19:10
     { coachId: 'coach_015', data: '2026-03-14', hI:8,  mI:15, hF:19, mF:10, label: 'Lovallo - sab TUTTO IL GIORNO' },
-    // Crestan: occupato 12:35-13:10
-    { coachId: 'coach_017', data: '2026-03-14', hI:12, mI:35, hF:13, mF:10, label: 'Crestan - sab 12:35-13:10' },
-    // Cuoco: occupato 12:35-13:10
-    { coachId: 'coach_026', data: '2026-03-14', hI:12, mI:35, hF:13, mF:10, label: 'Cuoco - sab 12:35-13:10' },
-    // Ortelli: occupato 15:35-16:10
-    { coachId: 'coach_009', data: '2026-03-14', hI:15, mI:35, hF:16, mF:10, label: 'Ortelli - sab 15:35-16:10' },
-    // Redi: occupato 15:35-16:10
-    { coachId: 'coach_010', data: '2026-03-14', hI:15, mI:35, hF:16, mF:10, label: 'Redi - sab 15:35-16:10' },
-    // Migliaccio: occupato 15:35-16:10
-    { coachId: 'coach_018', data: '2026-03-14', hI:15, mI:35, hF:16, mF:10, label: 'Migliaccio - sab 15:35-16:10' },
-    // Salvato: occupato 15:35-16:10
-    { coachId: 'coach_029', data: '2026-03-14', hI:15, mI:35, hF:16, mF:10, label: 'Salvato - sab 15:35-16:10' },
+    { coachId: 'coach_017', data: '2026-03-14', hI:8,  mI:15, hF:9,  mF:30, label: 'Crestan - sab 08:15-09:30' },
+    { coachId: 'coach_017', data: '2026-03-14', hI:13, mI:35, hF:14, mF:30, label: 'Crestan - sab 13:35-14:30' },
+    { coachId: 'coach_018', data: '2026-03-14', hI:14, mI:55, hF:15, mF:50, label: 'Migliaccio - sab 14:55-15:50' },
+    { coachId: 'coach_026', data: '2026-03-14', hI:8,  mI:15, hF:14, mF:10, label: 'Cuoco - sab 08:15-14:10' },
+    { coachId: 'coach_026', data: '2026-03-14', hI:17, mI:15, hF:19, mF:10, label: 'Cuoco - sab 17:15-19:10' },
+    { coachId: 'coach_029', data: '2026-03-14', hI:14, mI:55, hF:15, mF:50, label: 'Salvato - sab 14:55-15:50' },
 
     // ═══ DOMENICA 15 MARZO ═══
-    // De Marco: occupato 08:15-13:10
-    { coachId: 'coach_007', data: '2026-03-15', hI:8,  mI:15, hF:13, mF:10, label: 'De Marco - dom 08:15-13:10' },
-    // Garagiola: occupato 10:55-11:50
-    { coachId: 'coach_001', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Garagiola - dom 10:55-11:50' },
-    // Pasetto: occupata 10:55-11:50
-    { coachId: 'coach_003', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Pasetto - dom 10:55-11:50' },
-    // Monza: occupato 10:55-11:50
-    { coachId: 'coach_004', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Monza - dom 10:55-11:50' },
-    // Marras: occupato 10:55-11:50
-    { coachId: 'coach_005', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Marras - dom 10:55-11:50' },
-    // Fasciano: occupato 10:55-11:50
+    { coachId: 'coach_001', data: '2026-03-15', hI:8,  mI:15, hF:13, mF:10, label: 'De Marco - dom 08:15-13:10' },
+    { coachId: 'coach_002', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Garagiola - dom 10:55-11:50' },
+    { coachId: 'coach_003', data: '2026-03-15', hI:8,  mI:15, hF:10, mF:50, label: 'Colombo - dom 08:15-10:50' },
+    { coachId: 'coach_003', data: '2026-03-15', hI:12, mI:55, hF:14, mF:30, label: 'Colombo - dom 12:55-14:30' },
+    { coachId: 'coach_003', data: '2026-03-15', hI:17, mI:55, hF:19, mF:10, label: 'Colombo - dom 17:55-19:10' },
+    { coachId: 'coach_004', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Pasetto - dom 10:55-11:50' },
+    { coachId: 'coach_005', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Monza - dom 10:55-11:50' },
+    { coachId: 'coach_006', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Marras - dom 10:55-11:50' },
+    { coachId: 'coach_007', data: '2026-03-15', hI:8,  mI:15, hF:10, mF:30, label: 'Pagliano - dom 08:15-10:30' },
+    { coachId: 'coach_007', data: '2026-03-15', hI:12, mI:55, hF:16, mF:10, label: 'Pagliano - dom 12:55-16:10' },
+    { coachId: 'coach_007', data: '2026-03-15', hI:18, mI:35, hF:19, mF:10, label: 'Pagliano - dom 18:35-19:10' },
     { coachId: 'coach_011', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Fasciano - dom 10:55-11:50' },
-    // Sgambato: occupato 10:55-11:50
     { coachId: 'coach_013', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Sgambato - dom 10:55-11:50' },
-    // Acquistapace: occupato 10:55-11:50
     { coachId: 'coach_014', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Acquistapace - dom 10:55-11:50' },
-    // Lovallo: occupata 08:55-09:30
-    { coachId: 'coach_015', data: '2026-03-15', hI:8,  mI:55, hF:9,  mF:30, label: 'Lovallo - dom 08:55-09:30' },
-    // Bertacchi: occupato 10:55-11:50
+    { coachId: 'coach_015', data: '2026-03-15', hI:8,  mI:15, hF:10, mF:10, label: 'Lovallo - dom 08:15-10:10' },
+    { coachId: 'coach_015', data: '2026-03-15', hI:12, mI:55, hF:19, mF:10, label: 'Lovallo - dom 12:55-19:10' },
+    { coachId: 'coach_017', data: '2026-03-15', hI:8,  mI:15, hF:9,  mF:30, label: 'Crestan - dom 08:15-09:30' },
+    { coachId: 'coach_017', data: '2026-03-15', hI:13, mI:35, hF:14, mF:30, label: 'Crestan - dom 13:35-14:30' },
     { coachId: 'coach_024', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Bertacchi - dom 10:55-11:50' },
-    // Lavorenti: occupato 10:55-11:50
+    { coachId: 'coach_026', data: '2026-03-15', hI:8,  mI:15, hF:11, mF:30, label: 'Cuoco - dom 08:15-11:30' },
+    { coachId: 'coach_026', data: '2026-03-15', hI:18, mI:35, hF:19, mF:10, label: 'Cuoco - dom 18:35-19:10' },
     { coachId: 'coach_027', data: '2026-03-15', hI:10, mI:55, hF:11, mF:50, label: 'Lavorenti - dom 10:55-11:50' },
   ];
 
