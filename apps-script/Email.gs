@@ -147,7 +147,7 @@ function sendCancellationToCoach(bookingData, coach) {
 
     GmailApp.sendEmail(
       coach.email,
-      'Prenotazione cancellata: ' + clientFullName + ' – ' +
+      'Prenotazione Coaching Cancellata: ' + clientFullName + ' – ' +
         Utilities.formatDate(startDate, TIMEZONE, 'dd/MM/yyyy'),
       '',
       {
