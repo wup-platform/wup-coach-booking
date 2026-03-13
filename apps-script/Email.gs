@@ -69,6 +69,7 @@ function sendBookingNotificationToCoach(bookingData, coach) {
       _tr('Durata', durataMin + ' minuti', false),
       _tr('Codice', bookingData.booking_id, true),
       bookingData.notes ? _tr('Note', sanitizeString(bookingData.notes), false) : '',
+      bookingData.seller_name ? _tr('Venditore', sanitizeString(bookingData.seller_name), !bookingData.notes) : '',
       '</table>',
       '<hr>',
       '<p>L\'evento è stato aggiunto al tuo calendario Google "Managed".</p>'
