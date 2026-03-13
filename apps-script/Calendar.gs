@@ -60,15 +60,16 @@ function getAvailableSlots(coach, dateStr) {
 
 function getAvailabilitySummary(coach, fromDate, toDate) {
   const results = [];
-  const start   = new Date(fromDate + 'T12:00:00');
-  const end     = new Date(toDate   + 'T12:00:00');
+  const start   = new Date(fromDate + 'T00:00:00');
+  const end     = new Date(toDate   + 'T23:59:59');
   const now     = new Date();
+  const todayStr = Utilities.formatDate(now, TIMEZONE, 'yyyy-MM-dd');
   const current = new Date(start);
 
   while (current <= end) {
     const dateStr = Utilities.formatDate(current, TIMEZONE, 'yyyy-MM-dd');
 
-    if (current >= now) {
+    if (dateStr >= todayStr) {
       try {
         const slots = getAvailableSlots(coach, dateStr);
         results.push({ date: dateStr, hasSlots: slots.length > 0 });
