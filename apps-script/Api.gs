@@ -522,7 +522,7 @@ function handleUpdateBookingOutcome(params) {
     }
     if (!params.booking_id) return errorResponse('booking_id mancante.', 'MISSING_BOOKING_ID');
 
-    const VALID = ['VENDUTO', 'NON_VENDUTO', 'IN_TRATTATIVA', ''];
+    const VALID = ['VENDUTO', 'NON_VENDUTO', 'IN_TRATTATIVA', 'NON_PRESENTATO', ''];
     if (VALID.indexOf(params.esito || '') === -1) {
       return errorResponse('Esito non valido.', 'INVALID_ESITO');
     }
@@ -806,7 +806,7 @@ function handleSellerUpdateEsito(params) {
       return errorResponse('Non autorizzato.', 'UNAUTHORIZED');
     }
 
-    const VALID = ['VENDUTO', 'NON_VENDUTO', 'IN_TRATTATIVA', ''];
+    const VALID = ['VENDUTO', 'NON_VENDUTO', 'IN_TRATTATIVA', 'NON_PRESENTATO', ''];
     if (VALID.indexOf(params.esito || '') === -1) {
       return errorResponse('Esito non valido.', 'INVALID_ESITO');
     }
