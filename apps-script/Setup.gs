@@ -632,6 +632,22 @@ function unblockSBL_sab14_from1530() {
 }
 
 /**
+ * Blocco Monza (coach_004) — Sab 14/03 dalle 16:45 a fine giornata.
+ * Eseguire UNA VOLTA.
+ */
+function blockMonza_sab14_sera() {
+  var coach = getCoachById('coach_004');
+  if (!coach || !coach.calendar_managed_id) { Logger.log('ERRORE: coach_004 non trovato'); return; }
+  var cal = CalendarApp.getCalendarById(coach.calendar_managed_id);
+  if (!cal) { Logger.log('ERRORE: calendario non accessibile'); return; }
+  var inizio = new Date(2026, 2, 14, 16, 45, 0);
+  var fine   = new Date(2026, 2, 14, 19, 0, 0);
+  cal.createEvent('NON DISPONIBILE', inizio, fine);
+  Logger.log('Blocco creato: Monza sab 14/03 16:45-19:00');
+  SpreadsheetApp.getUi().alert('Blocco creato: Monza sab 14/03 16:45-19:00');
+}
+
+/**
  * Aggiunge la colonna dashboard_token al foglio Coaches (se non esiste),
  * genera un token per ogni coach attivo e invia via email i link personali.
  * Al termine logga e invia all'ADMIN_EMAIL la lista completa di URL.
