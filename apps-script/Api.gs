@@ -894,6 +894,204 @@ function handleSellerUpdateSalesforce(params) {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// COACH SLOTS & BLOCK HANDLERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * GET ?action=getCoachSlots&admin_token=TOKEN&coach_id=X&date=YYYY-MM-DD
+ * Restituisce TUTTI gli slot di un coach per una data, con stato: available, blocked, booked.
+ */
+function handleGetCoachSlots(params) {
+  try {
+    if (!params.admin_token || params.admin_token !== DASHBOARD_ADMIN_TOKEN) {
+      return errorResponse('Non autorizzato.', 'UNAUTHORIZED');
+    }
+    if (!params.coach_id) return errorResponse('coach_id mancante.', 'MISSING_COACH_ID');
+    if (!params.date)     return errorResponse('date mancante.', 'MISSING_DATE');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(params.date)) {
+      return errorResponse('Formato data non valido. Usa YYYY-MM-DD.', 'INVALID_DATE_FORMAT');
+    }
+
+    const coach = getCoachById(params.coach_id);
+    if (!coach) return errorResponse('Coach non trovato.', 'COACH_NOT_FOUND');
+
+    const dateStr = params.date;
+    const parts = dateStr.split('-');
+    const year  = parseInt(parts[0]);
+    const month = parseInt(parts[1]) - 1;
+    const day   = parseInt(parts[2]);
+
+    const startParts = String(coach.working_hours_start || '').split(':');
+    const startHour  = parseInt(startParts[0]) || BOOKING_WINDOW_START_HOUR;
+    const startMin   = parseInt(startParts[1]) || 0;
+    const endParts   = String(coach.working_hours_end || '').split(':');
+    const endHour    = parseInt(endParts[0]) || BOOKING_WINDOW_END_HOUR;
+    const endMin     = parseInt(endParts[1]) || 0;
+    const slotMin    = parseInt(coach.slot_duration_min) || SLOT_DURATION_DEFAULT_MIN;
+
+    const calendar = CalendarApp.getCalendarById(coach.calendar_managed_id);
+    if (!calendar) return errorResponse('Calendario non trovato per il coach.', 'CALENDAR_NOT_FOUND');
+
+    const dayStart = new Date(year, month, day, startHour, startMin, 0);
+    const dayEnd   = new Date(year, month, day, endHour, endMin, 0);
+
+    const existingEvents = calendar.getEvents(dayStart, dayEnd);
+
+    var slots = [];
+    var slotStart = new Date(dayStart);
+
+    while (true) {
+      var slotEnd = new Date(slotStart.getTime() + slotMin * 60 * 1000);
+      if (slotEnd > dayEnd) break;
+
+      var slotInfo = { start: slotStart.toISOString(), end: slotEnd.toISOString(), status: 'available' };
+
+      // Controlla se c'è un evento sovrapposto
+      for (var i = 0; i < existingEvents.length; i++) {
+        var eStart = existingEvents[i].getStartTime();
+        var eEnd   = existingEvents[i].getEndTime();
+        if (slotStart < eEnd && slotEnd > eStart) {
+          var title = existingEvents[i].getTitle() || '';
+          if (title === 'NON DISPONIBILE') {
+            slotInfo.status   = 'blocked';
+            slotInfo.event_id = existingEvents[i].getId();
+          } else {
+            slotInfo.status = 'booked';
+            // Estrai client_name dal formato "Wake Up Call – ClientName con CoachName"
+            var match = title.match(/^Wake Up Call\s*[–\-]\s*(.+?)\s+con\s+/);
+            slotInfo.client_name = match ? match[1].trim() : title;
+          }
+          break;
+        }
+      }
+
+      slots.push(slotInfo);
+      slotStart = new Date(slotEnd.getTime() + SLOT_BREAK_MIN * 60 * 1000);
+    }
+
+    return successResponse({
+      slots: slots,
+      coach: {
+        id:      String(coach.id),
+        nome:    String(coach.nome),
+        cognome: String(coach.cognome)
+      }
+    });
+
+  } catch (err) {
+    logAudit(LOG_LEVEL.ERROR, 'GET_COACH_SLOTS', '', err.message, { params: params });
+    return errorResponse('Errore nel recupero degli slot.', 'GET_COACH_SLOTS_ERROR');
+  }
+}
+
+/**
+ * POST { action: "toggleSlotBlock", admin_token, coach_id, slot_start (ISO), slot_end (ISO), block: true/false }
+ * Crea o rimuove un blocco "NON DISPONIBILE" su uno slot del coach.
+ * Se il blocco copre più slot, lo splitta rimuovendo solo lo slot richiesto.
+ */
+function handleToggleSlotBlock(params) {
+  try {
+    if (!params.admin_token || params.admin_token !== DASHBOARD_ADMIN_TOKEN) {
+      return errorResponse('Non autorizzato.', 'UNAUTHORIZED');
+    }
+    if (!params.coach_id)   return errorResponse('coach_id mancante.', 'MISSING_COACH_ID');
+    if (!params.slot_start) return errorResponse('slot_start mancante.', 'MISSING_SLOT_START');
+    if (!params.slot_end)   return errorResponse('slot_end mancante.', 'MISSING_SLOT_END');
+
+    const coach = getCoachById(params.coach_id);
+    if (!coach) return errorResponse('Coach non trovato.', 'COACH_NOT_FOUND');
+
+    const calendar = CalendarApp.getCalendarById(coach.calendar_managed_id);
+    if (!calendar) return errorResponse('Calendario non trovato per il coach.', 'CALENDAR_NOT_FOUND');
+
+    const slotStart = new Date(params.slot_start);
+    const slotEnd   = new Date(params.slot_end);
+    const shouldBlock = params.block === true || params.block === 'true';
+
+    if (shouldBlock) {
+      // Crea evento "NON DISPONIBILE"
+      calendar.createEvent('NON DISPONIBILE', slotStart, slotEnd, {
+        description: 'Blocco manuale dalla dashboard admin',
+        sendInvites: false
+      });
+
+      logAudit(LOG_LEVEL.INFO, 'TOGGLE_SLOT_BLOCK', '', 'Slot bloccato', {
+        actor: 'admin', coachId: coach.id, slotStart: params.slot_start, slotEnd: params.slot_end
+      });
+
+      return successResponse({ message: 'Slot bloccato.', action: 'blocked' });
+
+    } else {
+      // Trova e rimuovi il blocco "NON DISPONIBILE" che copre questo slot
+      var events = calendar.getEvents(slotStart, slotEnd);
+      var blockEvent = null;
+
+      for (var i = 0; i < events.length; i++) {
+        if (events[i].getTitle() === 'NON DISPONIBILE') {
+          blockEvent = events[i];
+          break;
+        }
+      }
+
+      if (!blockEvent) {
+        return errorResponse('Nessun blocco trovato per questo slot.', 'BLOCK_NOT_FOUND');
+      }
+
+      var blockStart = blockEvent.getStartTime();
+      var blockEnd   = blockEvent.getEndTime();
+
+      // Elimina l'evento blocco
+      blockEvent.deleteEvent();
+
+      // Se il blocco è più grande dello slot, ricrea i pezzi rimanenti
+      var slotMin  = parseInt(coach.slot_duration_min) || SLOT_DURATION_DEFAULT_MIN;
+      var stepMs   = (slotMin + SLOT_BREAK_MIN) * 60 * 1000;
+      var slotMs   = slotMin * 60 * 1000;
+
+      if (blockStart.getTime() < slotStart.getTime()) {
+        // Ricrea blocchi prima dello slot rimosso
+        var cursor = new Date(blockStart.getTime());
+        while (cursor.getTime() < slotStart.getTime()) {
+          var cursorEnd = new Date(cursor.getTime() + slotMs);
+          if (cursorEnd.getTime() <= slotStart.getTime()) {
+            calendar.createEvent('NON DISPONIBILE', cursor, cursorEnd, {
+              description: 'Blocco manuale (split dalla dashboard admin)',
+              sendInvites: false
+            });
+          }
+          cursor = new Date(cursor.getTime() + stepMs);
+        }
+      }
+
+      if (blockEnd.getTime() > slotEnd.getTime()) {
+        // Ricrea blocchi dopo lo slot rimosso
+        var cursor = new Date(slotEnd.getTime() + SLOT_BREAK_MIN * 60 * 1000);
+        while (cursor.getTime() < blockEnd.getTime()) {
+          var cursorEnd = new Date(cursor.getTime() + slotMs);
+          if (cursorEnd.getTime() <= blockEnd.getTime()) {
+            calendar.createEvent('NON DISPONIBILE', cursor, cursorEnd, {
+              description: 'Blocco manuale (split dalla dashboard admin)',
+              sendInvites: false
+            });
+          }
+          cursor = new Date(cursor.getTime() + stepMs);
+        }
+      }
+
+      logAudit(LOG_LEVEL.INFO, 'TOGGLE_SLOT_BLOCK', '', 'Slot sbloccato', {
+        actor: 'admin', coachId: coach.id, slotStart: params.slot_start, slotEnd: params.slot_end
+      });
+
+      return successResponse({ message: 'Slot sbloccato.', action: 'unblocked' });
+    }
+
+  } catch (err) {
+    logAudit(LOG_LEVEL.ERROR, 'TOGGLE_SLOT_BLOCK', '', err.message, { params: params });
+    return errorResponse('Errore nella gestione del blocco.', 'TOGGLE_SLOT_BLOCK_ERROR');
+  }
+}
+
 function handleCancelBooking(params) {
   try {
     const token = (params.token || params.cancel_token || '').trim();

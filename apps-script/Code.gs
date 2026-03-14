@@ -26,6 +26,7 @@ function doGet(e) {
       case 'getSellerLinks':     return handleGetSellerLinks(params);
       case 'seller_bookings':    return handleSellerBookings(params);
       case 'seller_auth':        return handleSellerAuth(params);
+      case 'getCoachSlots':      return handleGetCoachSlots(params);
       default:
         return _buildWelcomePage();
     }
@@ -74,6 +75,7 @@ function doPost(e) {
       case 'seller_auth':            return handleSellerAuth(params);
       case 'seller_update_esito':    return handleSellerUpdateEsito(params);
       case 'seller_update_salesforce': return handleSellerUpdateSalesforce(params);
+      case 'toggleSlotBlock':          return handleToggleSlotBlock(params);
       default:
         return errorResponse('Action non riconosciuta: ' + action, 'UNKNOWN_ACTION');
     }
