@@ -565,25 +565,70 @@ function blockUnavailableSlots() {
 }
 
 /**
- * Blocco rapido: Colombo (coach_002) — Dom 15/03 11:30–13:00
- * Eseguire UNA VOLTA dall'editor Apps Script, poi cancellare.
+ * Sblocca coach SBL — Sab 14/03 dalle 15:30 a fine giornata.
+ * Cancella SOLO gli eventi "NON DISPONIBILE" che coprono dopo le 15:30.
+ * NON tocca le prenotazioni con clienti (hanno titolo diverso).
+ * Se il blocco originale partiva prima delle 15:30, ricrea un mini-blocco fino alle 15:30.
+ * Eseguire UNA VOLTA dall'editor Apps Script.
  */
-function blockColombo_dom15() {
-  const coach = getCoachById('coach_002');
-  if (!coach || !coach.calendar_managed_id) {
-    Logger.log('ERRORE: coach_002 non trovato o senza calendario');
-    return;
-  }
-  const cal = CalendarApp.getCalendarById(coach.calendar_managed_id);
-  if (!cal) {
-    Logger.log('ERRORE: calendario non accessibile per coach_002');
-    return;
-  }
-  const inizio = new Date(2026, 2, 15, 11, 30, 0); // 15 marzo 2026, 11:30
-  const fine   = new Date(2026, 2, 15, 13, 0, 0);  // 15 marzo 2026, 13:00
-  cal.createEvent('NON DISPONIBILE', inizio, fine);
-  Logger.log('Blocco creato: Colombo dom 15/03 11:30-13:00');
-  SpreadsheetApp.getUi().alert('Blocco creato: Colombo dom 15/03 11:30-13:00');
+function unblockSBL_sab14_from1530() {
+  var coachIds = ['coach_009','coach_010','coach_016','coach_018','coach_029','coach_030','coach_031'];
+  var targetDate = new Date(2026, 2, 14); // 14 marzo 2026
+  var cutoff = new Date(2026, 2, 14, 15, 30, 0); // 15:30
+  var dayEnd = new Date(2026, 2, 14, 23, 59, 59);
+
+  var ok = 0;
+  var errors = [];
+
+  coachIds.forEach(function(coachId) {
+    try {
+      var coach = getCoachById(coachId);
+      if (!coach || !coach.calendar_managed_id) {
+        errors.push(coachId + ': calendario non trovato');
+        return;
+      }
+      var cal = CalendarApp.getCalendarById(coach.calendar_managed_id);
+      if (!cal) {
+        errors.push(coachId + ': calendario non accessibile');
+        return;
+      }
+
+      // Prendi tutti gli eventi di sabato 14
+      var events = cal.getEvents(targetDate, dayEnd);
+      var coachName = (coach.nome || '') + ' ' + (coach.cognome || '');
+
+      events.forEach(function(ev) {
+        // Processa SOLO eventi "NON DISPONIBILE" — non toccare prenotazioni clienti
+        if (ev.getTitle() !== 'NON DISPONIBILE') return;
+
+        var evStart = ev.getStartTime();
+        var evEnd = ev.getEndTime();
+
+        // Ignora blocchi che finiscono prima o alle 15:30 — non ci interessano
+        if (evEnd.getTime() <= cutoff.getTime()) return;
+
+        // Questo blocco copre dopo le 15:30 — va gestito
+        if (evStart.getTime() >= cutoff.getTime()) {
+          // Blocco inizia dopo le 15:30 → cancella tutto
+          ev.deleteEvent();
+          Logger.log('[OK] Cancellato intero blocco: ' + coachName + ' ' + evStart + ' - ' + evEnd);
+        } else {
+          // Blocco inizia prima delle 15:30 → accorcia fino alle 15:30
+          ev.deleteEvent();
+          cal.createEvent('NON DISPONIBILE', evStart, cutoff);
+          Logger.log('[OK] Accorciato blocco: ' + coachName + ' ' + evStart + ' - ' + evEnd + ' → fino 15:30');
+        }
+        ok++;
+      });
+    } catch(e) {
+      errors.push(coachId + ': ' + e.message);
+    }
+  });
+
+  var msg = 'Blocchi gestiti: ' + ok +
+    (errors.length > 0 ? '\n\nErrori:\n' + errors.join('\n') : '\n\nTutto ok!');
+  Logger.log(msg);
+  SpreadsheetApp.getUi().alert(msg);
 }
 
 /**
