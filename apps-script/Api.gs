@@ -90,8 +90,23 @@ function handleCreateBooking(params) {
     if (!params.client_name || !params.client_name.trim())    return errorResponse('Nome obbligatorio.', 'MISSING_CLIENT_NAME');
     if (!params.client_surname || !params.client_surname.trim()) return errorResponse('Cognome obbligatorio.', 'MISSING_CLIENT_SURNAME');
     if (!validateEmail(params.client_email)) return errorResponse('Email non valida.', 'INVALID_CLIENT_EMAIL');
+
+    // Auto-correzione typo email
+    var emailFix = validateAndFixEmail(params.client_email);
+    if (emailFix.corrected) {
+      logAudit(LOG_LEVEL.INFO, 'EMAIL_AUTOCORRECT', '',
+        'Email corretta: ' + emailFix.original + ' → ' + emailFix.email, {});
+      params.client_email = emailFix.email;
+    }
+
     if (!params.notes || !params.notes.trim()) return errorResponse('Le note sono obbligatorie.', 'MISSING_NOTES');
     if (!params.privacy_consent) return errorResponse('Accettare la privacy policy è obbligatorio.', 'MISSING_PRIVACY_CONSENT');
+
+    // Validazione modalita
+    var modalita = (params.modalita || MODALITA.LIVE).toUpperCase();
+    if (modalita !== MODALITA.LIVE && modalita !== MODALITA.LIVESTREAM) {
+      return errorResponse('Modalità non valida. Usa LIVE o LIVESTREAM.', 'INVALID_MODALITA');
+    }
 
     let startDate;
     try { startDate = parseDateTime(params.start_datetime); }
@@ -157,14 +172,17 @@ function handleCreateBooking(params) {
       event_id:       '',
       calendar_id:    '',
       seller_id:      sellerId,
-      seller_name:    sellerName
+      seller_name:    sellerName,
+      modalita:       modalita,
+      meet_link:      ''
     };
 
     // Crea evento calendario
     try {
       const calResult = createCalendarEvent(coach, bookingData);
-      bookingData.event_id   = calResult.eventId;
+      bookingData.event_id    = calResult.eventId;
       bookingData.calendar_id = calResult.calendarId;
+      bookingData.meet_link   = calResult.meetLink || '';
     } catch (calErr) {
       logAudit(LOG_LEVEL.WARN, 'CREATE_BOOKING', bookingId,
         'Evento calendario non creato: ' + calErr.message, {});
@@ -267,8 +285,17 @@ function handleGetAdminBookings(params) {
       }).length;
     });
 
+    // Lista venditori per il dropdown modifica venditore
+    var sellers = [];
+    try {
+      sellers = getAllSellers().map(function(s) {
+        return { id: s.id, nome: s.nome, cognome: s.cognome };
+      });
+    } catch(e) { /* ignore */ }
+
     return successResponse({
       bookings: safe,
+      sellers: sellers,
       meta: {
         total:     confirmedCount + cancelledCount,
         confirmed: confirmedCount,
@@ -522,7 +549,7 @@ function handleUpdateBookingOutcome(params) {
     }
     if (!params.booking_id) return errorResponse('booking_id mancante.', 'MISSING_BOOKING_ID');
 
-    const VALID = ['VENDUTO', 'NON_VENDUTO', 'IN_TRATTATIVA', 'NON_PRESENTATO', ''];
+    const VALID = ['VENDUTO', 'NON_VENDUTO', 'IN_TRATTATIVA', 'NON_PRESENTATO', 'DA_DEFINIRE', ''];
     if (VALID.indexOf(params.esito || '') === -1) {
       return errorResponse('Esito non valido.', 'INVALID_ESITO');
     }
@@ -544,6 +571,33 @@ function handleUpdateBookingOutcome(params) {
         sheet.getRange(i + 1, esitoIdx + 1).setValue(params.esito || '');
         logAudit(LOG_LEVEL.INFO, 'UPDATE_OUTCOME', params.booking_id,
           'Esito: ' + (params.esito || 'reset'), { actor: 'admin' });
+
+        // Notifica il venditore dell'esito se presente e se l'esito non è vuoto
+        if (params.esito) {
+          try {
+            var sellerIdIdx   = headers.indexOf('seller_id');
+            var sellerNameIdx = headers.indexOf('seller_name');
+            var coachNameIdx  = headers.indexOf('coach_name');
+            var clientNameIdx = headers.indexOf('client_name');
+            var clientSurnameIdx = headers.indexOf('client_surname');
+
+            var sellerId = sellerIdIdx !== -1 ? String(data[i][sellerIdIdx] || '') : '';
+            if (sellerId) {
+              var seller = getSellerById(sellerId);
+              if (seller && seller.email) {
+                var sellerFullName  = ((seller.nome || '') + ' ' + (seller.cognome || '')).trim();
+                var coachName       = coachNameIdx !== -1 ? String(data[i][coachNameIdx] || '') : '';
+                var clientFullName  = (clientNameIdx !== -1 ? String(data[i][clientNameIdx] || '') : '') + ' ' +
+                                      (clientSurnameIdx !== -1 ? String(data[i][clientSurnameIdx] || '') : '');
+                sendOutcomeToSeller(seller.email, sellerFullName, clientFullName.trim(), coachName, params.esito, params.booking_id);
+              }
+            }
+          } catch(sellerErr) {
+            logAudit(LOG_LEVEL.WARN, 'UPDATE_OUTCOME', params.booking_id,
+              'Email esito al venditore non inviata: ' + sellerErr.message, {});
+          }
+        }
+
         return successResponse({ message: 'Esito salvato.', booking_id: params.booking_id });
       }
     }
@@ -645,6 +699,168 @@ function handleUpdateBookingNotes(params) {
   }
 }
 
+/**
+ * POST { action: 'reactivateBooking', admin_token, booking_id [, new_start_datetime] }
+ * Riattiva una prenotazione cancellata. Se new_start_datetime è fornito,
+ * aggiorna l'orario verificando la disponibilità dello slot.
+ */
+function handleReactivateBooking(params) {
+  var lock = null;
+  try {
+    if (!params.admin_token || params.admin_token !== DASHBOARD_ADMIN_TOKEN) {
+      return errorResponse('Non autorizzato.', 'UNAUTHORIZED');
+    }
+    if (!params.booking_id) return errorResponse('booking_id mancante.', 'MISSING_BOOKING_ID');
+
+    const booking = getBookingById(params.booking_id);
+    if (!booking) return errorResponse('Prenotazione non trovata.', 'BOOKING_NOT_FOUND');
+    if (String(booking.status) !== BOOKING_STATUS.CANCELLED) {
+      return errorResponse('La prenotazione non è cancellata.', 'NOT_CANCELLED');
+    }
+
+    const coach = getCoachById(String(booking.coach_id));
+    if (!coach) return errorResponse('Coach non trovato.', 'COACH_NOT_FOUND');
+
+    const slotMin = parseInt(coach.slot_duration_min) || SLOT_DURATION_DEFAULT_MIN;
+
+    // Determina orario: nuovo se fornito, altrimenti originale
+    var startDate, endDate;
+    if (params.new_start_datetime) {
+      try { startDate = parseDateTime(params.new_start_datetime); }
+      catch(e) { return errorResponse('Formato new_start_datetime non valido.', 'INVALID_DATETIME'); }
+      endDate = new Date(startDate.getTime() + slotMin * 60 * 1000);
+    } else {
+      startDate = parseDateTime(String(booking.start_datetime));
+      endDate   = parseDateTime(String(booking.end_datetime));
+    }
+
+    // Acquisisci lock e verifica disponibilità
+    lock = acquireLock(LOCK_TIMEOUT_MS);
+
+    const dateStr = Utilities.formatDate(startDate, TIMEZONE, 'yyyy-MM-dd');
+    const availableSlots = getAvailableSlots(coach, dateStr);
+    const isAvailable = availableSlots.some(function(s) {
+      return new Date(s.start).toISOString() === startDate.toISOString();
+    });
+
+    if (!isAvailable) {
+      releaseLock(lock);
+      return errorResponse('Lo slot non è disponibile. Scegli un altro orario.', 'SLOT_NOT_AVAILABLE');
+    }
+
+    // Aggiorna il foglio Bookings
+    const sheet   = getSheet(SHEETS.BOOKINGS);
+    const data    = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const idIdx          = headers.indexOf('booking_id');
+    const statusIdx      = headers.indexOf('status');
+    const cancelledAtIdx = headers.indexOf('cancelled_at');
+    const startIdx       = headers.indexOf('start_datetime');
+    const endIdx         = headers.indexOf('end_datetime');
+    const eventIdIdx     = headers.indexOf('event_id');
+    const calendarIdIdx  = headers.indexOf('calendar_id');
+
+    for (var i = 1; i < data.length; i++) {
+      if (String(data[i][idIdx]) === String(params.booking_id)) {
+        var row = i + 1;
+        sheet.getRange(row, statusIdx + 1).setValue(BOOKING_STATUS.CONFIRMED);
+        if (cancelledAtIdx !== -1) sheet.getRange(row, cancelledAtIdx + 1).setValue('');
+        sheet.getRange(row, startIdx + 1).setValue(startDate.toISOString());
+        sheet.getRange(row, endIdx + 1).setValue(endDate.toISOString());
+
+        // Ricrea evento calendario
+        var bookingModalita = String(booking.modalita || MODALITA.LIVE);
+        var bookingForCal = {
+          booking_id:     String(booking.booking_id),
+          client_name:    String(booking.client_name),
+          client_surname: String(booking.client_surname),
+          client_email:   String(booking.client_email),
+          client_phone:   String(booking.client_phone || ''),
+          start_datetime: startDate.toISOString(),
+          end_datetime:   endDate.toISOString(),
+          notes:          String(booking.notes || ''),
+          modalita:       bookingModalita
+        };
+
+        var meetLinkIdx = headers.indexOf('meet_link');
+
+        try {
+          var calResult = createCalendarEvent(coach, bookingForCal);
+          if (eventIdIdx !== -1)    sheet.getRange(row, eventIdIdx + 1).setValue(calResult.eventId);
+          if (calendarIdIdx !== -1) sheet.getRange(row, calendarIdIdx + 1).setValue(calResult.calendarId);
+          if (meetLinkIdx !== -1 && calResult.meetLink) sheet.getRange(row, meetLinkIdx + 1).setValue(calResult.meetLink);
+        } catch(calErr) {
+          logAudit(LOG_LEVEL.WARN, 'REACTIVATE_BOOKING', params.booking_id,
+            'Evento calendario non ricreato: ' + calErr.message, {});
+        }
+
+        break;
+      }
+    }
+
+    releaseLock(lock);
+    lock = null;
+
+    logAudit(LOG_LEVEL.INFO, 'REACTIVATE_BOOKING', String(booking.booking_id),
+      'Prenotazione riattivata da admin' + (params.new_start_datetime ? ' con nuovo orario' : ''),
+      { actor: 'admin', newStart: startDate.toISOString() });
+
+    return successResponse({
+      message: 'Prenotazione riattivata.',
+      booking_id: String(booking.booking_id),
+      start_datetime: startDate.toISOString(),
+      end_datetime: endDate.toISOString()
+    });
+
+  } catch(err) {
+    if (lock) releaseLock(lock);
+    logAudit(LOG_LEVEL.ERROR, 'REACTIVATE_BOOKING', '', err.message, {});
+    return errorResponse('Errore riattivazione: ' + err.message, 'REACTIVATE_ERROR');
+  }
+}
+
+/**
+ * POST { action: 'updateBookingSeller', admin_token, booking_id, seller_id, seller_name }
+ * Permette ad Alessia di cambiare il venditore associato a una prenotazione.
+ */
+function handleUpdateBookingSeller(params) {
+  try {
+    if (!params.admin_token || params.admin_token !== DASHBOARD_ADMIN_TOKEN) {
+      return errorResponse('Non autorizzato.', 'UNAUTHORIZED');
+    }
+    if (!params.booking_id) return errorResponse('booking_id mancante.', 'MISSING_BOOKING_ID');
+
+    const newSellerId   = sanitizeString(params.seller_id || '');
+    const newSellerName = sanitizeString(params.seller_name || '');
+
+    const sheet = getSheet(SHEETS.BOOKINGS);
+    const data  = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const idIdx         = headers.indexOf('booking_id');
+    const sellerIdIdx   = headers.indexOf('seller_id');
+    const sellerNameIdx = headers.indexOf('seller_name');
+
+    if (sellerIdIdx === -1 || sellerNameIdx === -1) {
+      return errorResponse('Colonne seller_id/seller_name non trovate.', 'SELLER_COLUMNS_MISSING');
+    }
+
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][idIdx]) === String(params.booking_id)) {
+        sheet.getRange(i + 1, sellerIdIdx + 1).setValue(newSellerId);
+        sheet.getRange(i + 1, sellerNameIdx + 1).setValue(newSellerName);
+        logAudit(LOG_LEVEL.INFO, 'UPDATE_SELLER', params.booking_id,
+          'Venditore aggiornato da admin: ' + newSellerName + ' (' + newSellerId + ')', { actor: 'admin' });
+        return successResponse({ message: 'Venditore aggiornato.', booking_id: params.booking_id });
+      }
+    }
+
+    return errorResponse('Prenotazione non trovata.', 'BOOKING_NOT_FOUND');
+  } catch(err) {
+    logAudit(LOG_LEVEL.ERROR, 'UPDATE_SELLER', '', err.message, {});
+    return errorResponse('Errore aggiornamento venditore.', 'UPDATE_SELLER_ERROR');
+  }
+}
+
 // Helper: booking anonimizzato per la dashboard admin
 function _safeDashboardBooking(b) {
   return {
@@ -664,7 +880,9 @@ function _safeDashboardBooking(b) {
     esito:          String(b.esito || ''),
     salesforce_opportunity: String(b.salesforce_opportunity || ''),
     seller_id:      String(b.seller_id || ''),
-    seller_name:    String(b.seller_name || '')
+    seller_name:    String(b.seller_name || ''),
+    modalita:       String(b.modalita || 'LIVE'),
+    meet_link:      String(b.meet_link || '')
     // Esclusi: cancel_token, event_id, calendar_id
   };
 }
@@ -806,7 +1024,7 @@ function handleSellerUpdateEsito(params) {
       return errorResponse('Non autorizzato.', 'UNAUTHORIZED');
     }
 
-    const VALID = ['VENDUTO', 'NON_VENDUTO', 'IN_TRATTATIVA', 'NON_PRESENTATO', ''];
+    const VALID = ['VENDUTO', 'NON_VENDUTO', 'IN_TRATTATIVA', 'NON_PRESENTATO', 'DA_DEFINIRE', ''];
     if (VALID.indexOf(params.esito || '') === -1) {
       return errorResponse('Esito non valido.', 'INVALID_ESITO');
     }

@@ -24,6 +24,17 @@ function sendBookingConfirmationToClient(bookingData, coach) {
       _tr('Codice prenotazione', bookingData.booking_id, false),
       '</table>',
       '<hr>',
+      (function() {
+        var mod = String(bookingData.modalita || 'LIVE');
+        var ml  = String(bookingData.meet_link || '');
+        if (mod === 'LIVESTREAM' && ml) {
+          return '<div style="margin:20px 0;padding:20px;background:#e8f5e9;border-radius:10px;text-align:center">' +
+            '<p style="margin:0 0 12px;font-size:14px;color:#2e7d32;font-weight:700">La tua sessione si svolgerà online via Google Meet</p>' +
+            '<a href="' + ml + '" style="display:inline-block;background:#1a73e8;color:#fff;padding:16px 36px;text-decoration:none;border-radius:8px;font-size:17px;font-weight:800;letter-spacing:.5px">Link Google Meet</a>' +
+            '<p style="margin:10px 0 0;font-size:11px;color:#888;word-break:break-all">' + ml + '</p></div>';
+        }
+        return '';
+      })(),
       '<p>Riceverai un invito nel tuo calendario Google.</p>',
       '<p style="margin:20px 0 10px">Per cancellare la prenotazione (almeno 24h prima dell\'evento):</p>',
       '<p style="margin:0 0 8px"><a href="' + cancelUrl + '" class="cancel-btn" style="display:inline-block;background:#dc3545;color:#fff;padding:13px 28px;text-decoration:none;border-radius:6px;font-size:15px;font-weight:700;letter-spacing:.3px">&#x2715; Cancella prenotazione</a></p>',
@@ -72,6 +83,17 @@ function sendBookingNotificationToCoach(bookingData, coach) {
       bookingData.seller_name ? _tr('Venditore', sanitizeString(bookingData.seller_name), !bookingData.notes) : '',
       '</table>',
       '<hr>',
+      (function() {
+        var mod = String(bookingData.modalita || 'LIVE');
+        var ml  = String(bookingData.meet_link || '');
+        if (mod === 'LIVESTREAM' && ml) {
+          return '<div style="margin:16px 0;padding:16px;background:#e8f5e9;border-radius:8px;text-align:center">' +
+            '<p style="margin:0 0 10px;font-size:13px;color:#2e7d32;font-weight:700">Sessione LIVESTREAM — Google Meet</p>' +
+            '<a href="' + ml + '" style="display:inline-block;background:#1a73e8;color:#fff;padding:14px 28px;text-decoration:none;border-radius:8px;font-size:15px;font-weight:700">Entra in Meet</a>' +
+            '<p style="margin:8px 0 0;font-size:11px;color:#888;word-break:break-all">' + ml + '</p></div>';
+        }
+        return '';
+      })(),
       '<p>L\'evento è stato aggiunto al tuo calendario Google "Managed".</p>'
     ].join('');
 
@@ -332,6 +354,72 @@ function sendDashboardLinkToSeller(seller, url) {
     'Link dashboard inviato al venditore ' + seller.email, { sellerId: seller.id });
 }
 
+/**
+ * Notifica al venditore l'esito della sessione di coaching.
+ */
+function sendOutcomeToSeller(sellerEmail, sellerName, clientFullName, coachFullName, esito, bookingId) {
+  try {
+    var esitoLabels = {
+      'VENDUTO':        '✅ Chiusa vinta',
+      'NON_VENDUTO':    '❌ Chiusa persa',
+      'IN_TRATTATIVA':  '🔄 Opportunità aperta',
+      'NON_PRESENTATO': '🚫 Non presentato',
+      'DA_DEFINIRE':    '⏳ Da definire'
+    };
+    var esitoLabel = esitoLabels[esito] || esito || '—';
+
+    var esitoColor = esito === 'VENDUTO' ? '#065f46' :
+                     esito === 'NON_VENDUTO' ? '#991b1b' :
+                     esito === 'IN_TRATTATIVA' ? '#92400e' :
+                     esito === 'NON_PRESENTATO' ? '#374151' :
+                     esito === 'DA_DEFINIRE' ? '#6b21a8' : '#333';
+    var esitoBg    = esito === 'VENDUTO' ? '#d1fae5' :
+                     esito === 'NON_VENDUTO' ? '#fee2e2' :
+                     esito === 'IN_TRATTATIVA' ? '#fef3c7' :
+                     esito === 'NON_PRESENTATO' ? '#f3f4f6' :
+                     esito === 'DA_DEFINIRE' ? '#f3e8ff' : '#f9f9f9';
+
+    var bodyHtml = [
+      '<p>Ciao <strong>' + sanitizeString(sellerName) + '</strong>,</p>',
+      '<p>aggiornamento sull\'esito della sessione di coaching:</p>',
+      '<hr>',
+      '<table style="border-collapse:collapse;width:100%">',
+      _tr('Cliente', sanitizeString(clientFullName), false),
+      _tr('Coach', sanitizeString(coachFullName), true),
+      '</table>',
+      '<div style="margin:16px 0;padding:14px 20px;border-radius:8px;background:' + esitoBg + ';text-align:center">',
+      '<span style="font-size:18px;font-weight:800;color:' + esitoColor + '">' + esitoLabel + '</span>',
+      '</div>',
+      '<hr>',
+      '<p style="font-size:12px;color:#888">Codice prenotazione: ' + sanitizeString(bookingId) + '</p>'
+    ].join('');
+
+    var subject = esito === 'VENDUTO' ? '✅ Coaching chiusa vinta — ' + clientFullName :
+                  esito === 'NON_VENDUTO' ? '❌ Coaching chiusa persa — ' + clientFullName :
+                  esito === 'IN_TRATTATIVA' ? '🔄 Opportunità aperta — ' + clientFullName :
+                  esito === 'NON_PRESENTATO' ? '🚫 Cliente non presentato — ' + clientFullName :
+                  esito === 'DA_DEFINIRE' ? '⏳ Esito da definire — ' + clientFullName :
+                  'Aggiornamento esito coaching — ' + clientFullName;
+
+    GmailApp.sendEmail(
+      sellerEmail,
+      subject,
+      '',
+      {
+        from:     SENDER_EMAIL,
+        name:     SENDER_NAME,
+        htmlBody: buildEmailTemplate('Esito Coaching', bodyHtml)
+      }
+    );
+
+    logAudit(LOG_LEVEL.INFO, 'EMAIL_OUTCOME_SELLER', bookingId,
+      'Email esito inviata al venditore ' + sellerEmail, { esito: esito });
+  } catch (err) {
+    logAudit(LOG_LEVEL.ERROR, 'EMAIL_OUTCOME_SELLER', bookingId,
+      'Errore email esito venditore: ' + err.message, {});
+  }
+}
+
 function buildEmailTemplate(title, bodyHtml) {
   return '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">' +
   '<style>body{margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;background:#f4f4f4}' +
@@ -356,6 +444,124 @@ function buildEmailTemplate(title, bodyHtml) {
   '<p style="color:#aaa;font-size:11px;margin:4px 0 0">Email automatica generata dal sistema. Non rispondere a questo messaggio.</p>' +
   '</td></tr></table>' +
   '</td></tr></table></body></html>';
+}
+
+/**
+ * Invia email promemoria al cliente prima della sessione.
+ * NOTA: Le note NON vengono incluse (sono private).
+ */
+function sendReminderToClient(bookingData, coach) {
+  try {
+    const coachFullName = (coach.nome || '') + ' ' + (coach.cognome || '');
+    const startDate = parseDateTime(bookingData.start_datetime);
+    const endDate   = parseDateTime(bookingData.end_datetime);
+    const durataMin = Math.round((endDate - startDate) / 60000);
+    var modalita    = String(bookingData.modalita || 'LIVE');
+    var meetLink    = String(bookingData.meet_link || '');
+
+    var modalitaHtml = '';
+    if (modalita === 'LIVESTREAM' && meetLink) {
+      modalitaHtml = [
+        '<div style="margin:20px 0;padding:20px;background:#e8f5e9;border-radius:10px;text-align:center">',
+        '<p style="margin:0 0 12px;font-size:14px;color:#2e7d32;font-weight:700">La tua sessione si svolge online via Google Meet</p>',
+        '<a href="' + meetLink + '" style="display:inline-block;background:#1a73e8;color:#fff;padding:16px 36px;text-decoration:none;border-radius:8px;font-size:17px;font-weight:800;letter-spacing:.5px">Entra nella sessione Meet</a>',
+        '<p style="margin:10px 0 0;font-size:11px;color:#888;word-break:break-all">' + meetLink + '</p>',
+        '</div>'
+      ].join('');
+    } else {
+      modalitaHtml = '<p style="margin:16px 0;padding:14px 20px;background:#fff3e0;border-radius:8px;color:#e65100;font-weight:600">Ricordati di presentarti in sede per la tua sessione.</p>';
+    }
+
+    const bodyHtml = [
+      '<p>Ciao <strong>' + sanitizeString(bookingData.client_name) + '</strong>,</p>',
+      '<p>la tua sessione di coaching sta per iniziare!</p>',
+      '<hr>',
+      '<table style="border-collapse:collapse;width:100%">',
+      _tr('Coach', sanitizeString(coachFullName.trim()), false),
+      _tr('Data e ora', formatDateItalian(startDate), true),
+      _tr('Durata', durataMin + ' minuti', false),
+      _tr('Codice prenotazione', String(bookingData.booking_id), true),
+      '</table>',
+      '<hr>',
+      modalitaHtml
+    ].join('');
+
+    GmailApp.sendEmail(
+      bookingData.client_email,
+      'Promemoria: La tua sessione coaching è tra poco!',
+      '',
+      {
+        from:     SENDER_EMAIL,
+        name:     SENDER_NAME,
+        htmlBody: buildEmailTemplate('Promemoria Sessione Coaching', bodyHtml)
+      }
+    );
+
+    logAudit(LOG_LEVEL.INFO, 'EMAIL_REMINDER_CLIENT', String(bookingData.booking_id),
+      'Promemoria inviato a ' + bookingData.client_email, {});
+  } catch (err) {
+    logAudit(LOG_LEVEL.ERROR, 'EMAIL_REMINDER_CLIENT', String(bookingData.booking_id),
+      'Errore invio promemoria cliente: ' + err.message, {});
+  }
+}
+
+/**
+ * Invia email promemoria al coach prima della sessione.
+ */
+function sendReminderToCoach(bookingData, coach) {
+  try {
+    const coachFullName  = (coach.nome || '') + ' ' + (coach.cognome || '');
+    const clientFullName = bookingData.client_name + ' ' + bookingData.client_surname;
+    const startDate = parseDateTime(bookingData.start_datetime);
+    const endDate   = parseDateTime(bookingData.end_datetime);
+    const durataMin = Math.round((endDate - startDate) / 60000);
+    var modalita    = String(bookingData.modalita || 'LIVE');
+    var meetLink    = String(bookingData.meet_link || '');
+
+    var meetHtml = '';
+    if (modalita === 'LIVESTREAM' && meetLink) {
+      meetHtml = [
+        '<div style="margin:16px 0;padding:16px;background:#e8f5e9;border-radius:8px;text-align:center">',
+        '<p style="margin:0 0 10px;font-size:13px;color:#2e7d32;font-weight:700">Sessione LIVESTREAM — Google Meet</p>',
+        '<a href="' + meetLink + '" style="display:inline-block;background:#1a73e8;color:#fff;padding:14px 28px;text-decoration:none;border-radius:8px;font-size:15px;font-weight:700">Entra in Meet</a>',
+        '<p style="margin:8px 0 0;font-size:11px;color:#888;word-break:break-all">' + meetLink + '</p>',
+        '</div>'
+      ].join('');
+    }
+
+    const bodyHtml = [
+      '<p>Ciao <strong>' + sanitizeString(coachFullName.trim()) + '</strong>,</p>',
+      '<p>hai una sessione di coaching tra poco con <strong>' + sanitizeString(clientFullName) + '</strong>.</p>',
+      '<hr>',
+      '<table style="border-collapse:collapse;width:100%">',
+      _tr('Cliente', sanitizeString(clientFullName), false),
+      _tr('Telefono', sanitizeString(bookingData.client_phone || 'Non fornito'), true),
+      _tr('Data e ora', formatDateItalian(startDate), false),
+      _tr('Durata', durataMin + ' minuti', true),
+      _tr('Codice', String(bookingData.booking_id), false),
+      bookingData.notes ? _tr('Note', sanitizeString(bookingData.notes), true) : '',
+      '</table>',
+      '<hr>',
+      meetHtml
+    ].join('');
+
+    GmailApp.sendEmail(
+      coach.email,
+      'Promemoria: Sessione coaching tra poco con ' + clientFullName,
+      '',
+      {
+        from:     SENDER_EMAIL,
+        name:     SENDER_NAME,
+        htmlBody: buildEmailTemplate('Promemoria Sessione Coaching', bodyHtml)
+      }
+    );
+
+    logAudit(LOG_LEVEL.INFO, 'EMAIL_REMINDER_COACH', String(bookingData.booking_id),
+      'Promemoria inviato a ' + coach.email, {});
+  } catch (err) {
+    logAudit(LOG_LEVEL.ERROR, 'EMAIL_REMINDER_COACH', String(bookingData.booking_id),
+      'Errore invio promemoria coach: ' + err.message, {});
+  }
 }
 
 // Helper: riga tabella email alternata

@@ -46,7 +46,7 @@ function _setupBookingsSheet(ss) {
     'client_name', 'client_surname', 'client_email', 'client_phone',
     'start_datetime', 'end_datetime', 'timezone', 'notes', 'status',
     'cancel_token', 'event_id', 'calendar_id', 'cancelled_at',
-    'seller_id', 'seller_name'
+    'seller_id', 'seller_name', 'modalita', 'meet_link', 'reminder_sent'
   ];
   const sheet = _getOrCreateSheet(ss, SHEETS.BOOKINGS);
   _applyHeaders(sheet, headers);

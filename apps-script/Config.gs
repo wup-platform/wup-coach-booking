@@ -61,6 +61,12 @@ const BOOKING_STATUS = {
   CANCELLED:  'CANCELLED'
 };
 
+// Modalità della sessione
+const MODALITA = {
+  LIVE: 'LIVE',
+  LIVESTREAM: 'LIVESTREAM'
+};
+
 // Livelli di log per il foglio Audit
 const LOG_LEVEL = {
   INFO:  'INFO',

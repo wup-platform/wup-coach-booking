@@ -119,3 +119,72 @@ function sanitizeString(str) {
   if (!str || typeof str !== 'string') return '';
   return str.trim().replace(/[<>]/g, '');
 }
+
+/**
+ * Controlla e corregge errori di battitura comuni nei domini email.
+ * @param {string} email - L'indirizzo email da validare
+ * @returns {{ email: string, corrected: boolean, original: string }}
+ */
+function validateAndFixEmail(email) {
+  if (!email || typeof email !== 'string') {
+    return { email: email || '', corrected: false, original: email || '' };
+  }
+
+  var original = email.trim().toLowerCase();
+  var parts = original.split('@');
+  if (parts.length !== 2) {
+    return { email: original, corrected: false, original: original };
+  }
+
+  var user = parts[0];
+  var domain = parts[1];
+
+  // Mappa di domini errati → corretti
+  var domainFixes = {
+    'gmial.com':      'gmail.com',
+    'gmal.com':       'gmail.com',
+    'gmai.com':       'gmail.com',
+    'gamil.com':      'gmail.com',
+    'gnail.com':      'gmail.com',
+    'gmail.co':       'gmail.com',
+    'hotmal.com':     'hotmail.com',
+    'hotmial.com':    'hotmail.com',
+    'hotmail.co':     'hotmail.com',
+    'yahooo.com':     'yahoo.com',
+    'yaho.com':       'yahoo.com',
+    'outloo.com':     'outlook.com',
+    'outlok.com':     'outlook.com',
+    'libero.i':       'libero.it',
+    'iclud.com':      'icloud.com',
+    'icloud.co':      'icloud.com',
+    'protonmal.com':  'protonmail.com'
+  };
+
+  // yahoo.co → yahoo.com MA yahoo.co.jp è valido
+  if (domain === 'yahoo.co') {
+    domain = 'yahoo.com';
+  }
+
+  // Controlla dominio nella mappa
+  if (domainFixes[domain]) {
+    domain = domainFixes[domain];
+  }
+
+  // Fix TLD comuni: .con .cmo .ocm .vom → .com
+  // Solo se non è già stato corretto dalla mappa e il dominio ha un TLD errato
+  var tldFixes = { '.con': '.com', '.cmo': '.com', '.ocm': '.com', '.vom': '.com' };
+  for (var wrongTld in tldFixes) {
+    if (domain.length > wrongTld.length && domain.substring(domain.length - wrongTld.length) === wrongTld) {
+      // Verifica che non sia un dominio valido noto (es. .con potrebbe essere parte di un dominio reale)
+      domain = domain.substring(0, domain.length - wrongTld.length) + tldFixes[wrongTld];
+      break;
+    }
+  }
+
+  var correctedEmail = user + '@' + domain;
+  return {
+    email: correctedEmail,
+    corrected: correctedEmail !== original,
+    original: original
+  };
+}

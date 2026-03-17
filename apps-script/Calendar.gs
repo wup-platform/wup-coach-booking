@@ -88,9 +88,6 @@ function getAvailabilitySummary(coach, fromDate, toDate) {
 
 function createCalendarEvent(coach, bookingData) {
   try {
-    const calendar = CalendarApp.getCalendarById(coach.calendar_managed_id);
-    if (!calendar) throw new Error('Calendario Managed non trovato per coach: ' + coach.id);
-
     const startDate     = parseDateTime(bookingData.start_datetime);
     const endDate       = parseDateTime(bookingData.end_datetime);
     const coachFullName = (coach.nome || '') + ' ' + (coach.cognome || '');
@@ -103,27 +100,63 @@ function createCalendarEvent(coach, bookingData) {
       '=== PRENOTAZIONE WAKE UP CALL COACH BOOKING ===',
       'Booking ID: ' + bookingData.booking_id,
       'Cliente: ' + clientFullName,
-      'Email cliente: ' + bookingData.client_email,
-      'Telefono: ' + (bookingData.client_phone || 'Non fornito'),
       'Coach: ' + coachFullName.trim(),
       'Durata: ' + durataMin + ' minuti',
-      'Note: ' + (bookingData.notes || 'Nessuna'),
       'Creato il: ' + formatDateItalian(new Date()),
       '======================================='
     ].join('\n');
 
-    const event = calendar.createEvent(title, startDate, endDate, {
+    // LIVESTREAM: usa Calendar Advanced Service per creare evento con Google Meet
+    if (bookingData.modalita === MODALITA.LIVESTREAM) {
+      var event = Calendar.Events.insert({
+        summary: title,
+        description: description,
+        start: { dateTime: startDate.toISOString(), timeZone: TIMEZONE },
+        end: { dateTime: endDate.toISOString(), timeZone: TIMEZONE },
+        attendees: [
+          { email: coach.email },
+          { email: bookingData.client_email }
+        ],
+        conferenceData: {
+          createRequest: {
+            requestId: bookingData.booking_id + '-meet',
+            conferenceSolutionKey: { type: 'hangoutsMeet' }
+          }
+        }
+      }, coach.calendar_managed_id, { conferenceDataVersion: 1, sendUpdates: 'none' });
+
+      var meetLink = '';
+      if (event.conferenceData && event.conferenceData.entryPoints) {
+        for (var j = 0; j < event.conferenceData.entryPoints.length; j++) {
+          if (event.conferenceData.entryPoints[j].entryPointType === 'video') {
+            meetLink = event.conferenceData.entryPoints[j].uri;
+            break;
+          }
+        }
+      }
+
+      logAudit(LOG_LEVEL.INFO, 'CREATE_CALENDAR_EVENT', bookingData.booking_id,
+        'Evento LIVESTREAM creato con Meet', { eventId: event.id, calendarId: coach.calendar_managed_id, meetLink: meetLink });
+
+      return { eventId: event.id, calendarId: coach.calendar_managed_id, meetLink: meetLink };
+    }
+
+    // LIVE (default): usa CalendarApp standard
+    const calendar = CalendarApp.getCalendarById(coach.calendar_managed_id);
+    if (!calendar) throw new Error('Calendario Managed non trovato per coach: ' + coach.id);
+
+    const calEvent = calendar.createEvent(title, startDate, endDate, {
       description: description,
       sendInvites: false
     });
 
-    event.addGuest(coach.email);
-    event.addGuest(bookingData.client_email);
+    calEvent.addGuest(coach.email);
+    calEvent.addGuest(bookingData.client_email);
 
     logAudit(LOG_LEVEL.INFO, 'CREATE_CALENDAR_EVENT', bookingData.booking_id,
-      'Evento creato', { eventId: event.getId(), calendarId: coach.calendar_managed_id });
+      'Evento creato', { eventId: calEvent.getId(), calendarId: coach.calendar_managed_id });
 
-    return { eventId: event.getId(), calendarId: coach.calendar_managed_id };
+    return { eventId: calEvent.getId(), calendarId: coach.calendar_managed_id, meetLink: '' };
 
   } catch (err) {
     logAudit(LOG_LEVEL.ERROR, 'CREATE_CALENDAR_EVENT', bookingData.booking_id,

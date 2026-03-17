@@ -70,6 +70,8 @@ function doPost(e) {
       case 'updateBookingOutcome':    return handleUpdateBookingOutcome(params);
       case 'updateSalesforceFlag':   return handleUpdateSalesforceFlag(params);
       case 'updateBookingNotes':     return handleUpdateBookingNotes(params);
+      case 'updateBookingSeller':    return handleUpdateBookingSeller(params);
+      case 'reactivateBooking':      return handleReactivateBooking(params);
       case 'get_sellers':            return handleGetSellers(params);
       case 'seller_bookings':        return handleSellerBookings(params);
       case 'seller_auth':            return handleSellerAuth(params);
@@ -122,6 +124,84 @@ function checkCalendarAudit() {
   } catch (err) {
     logAudit(LOG_LEVEL.ERROR, 'CALENDAR_AUDIT', '', err.message, {});
     sendAdminAlert('Errore in checkCalendarAudit', err.message);
+  }
+}
+
+/**
+ * Trigger orario: invia promemoria email per le sessioni che iniziano entro 60 minuti.
+ * Configura in: Trigger > Aggiungi trigger > sendBookingReminders > Ogni ora
+ *
+ * Controlla la colonna 'reminder_sent' per evitare duplicati.
+ * Invia promemoria sia al cliente che al coach.
+ */
+function sendBookingReminders() {
+  try {
+    Logger.log('sendBookingReminders: avvio...');
+    const now = new Date();
+    const in60min = new Date(now.getTime() + 60 * 60 * 1000);
+
+    const sheet   = getSheet(SHEETS.BOOKINGS);
+    const data    = sheet.getDataRange().getValues();
+    const headers = data[0];
+
+    const startIdx       = headers.indexOf('start_datetime');
+    const statusIdx      = headers.indexOf('status');
+    const reminderIdx    = headers.indexOf('reminder_sent');
+    const coachIdIdx     = headers.indexOf('coach_id');
+
+    if (reminderIdx === -1) {
+      // Crea colonna reminder_sent se non esiste
+      var newCol = headers.length + 1;
+      sheet.getRange(1, newCol).setValue('reminder_sent').setFontWeight('bold').setBackground('#D3D3D3');
+      Logger.log('sendBookingReminders: colonna reminder_sent creata alla posizione ' + newCol);
+      return; // rieseguirà al prossimo trigger con la colonna presente
+    }
+
+    var sentCount = 0;
+
+    for (var i = 1; i < data.length; i++) {
+      var status = String(data[i][statusIdx]);
+      if (status !== BOOKING_STATUS.CONFIRMED) continue;
+
+      var reminderSent = String(data[i][reminderIdx] || '').toUpperCase();
+      if (reminderSent === 'TRUE') continue;
+
+      var startStr = String(data[i][startIdx] || '');
+      if (!startStr) continue;
+
+      var startDate;
+      try { startDate = new Date(startStr); } catch(e) { continue; }
+      if (isNaN(startDate.getTime())) continue;
+
+      // Sessione deve iniziare tra adesso e i prossimi 60 minuti
+      if (startDate > now && startDate <= in60min) {
+        // Ricostruisci bookingData dalla riga
+        var bookingData = {};
+        for (var h = 0; h < headers.length; h++) {
+          bookingData[headers[h]] = data[i][h];
+        }
+
+        var coachId = String(data[i][coachIdIdx] || '');
+        var coach = getCoachById(coachId);
+
+        if (coach) {
+          sendReminderToClient(bookingData, coach);
+          sendReminderToCoach(bookingData, coach);
+        }
+
+        // Marca reminder come inviato
+        sheet.getRange(i + 1, reminderIdx + 1).setValue('TRUE');
+        sentCount++;
+
+        logAudit(LOG_LEVEL.INFO, 'SEND_REMINDER', String(bookingData.booking_id),
+          'Promemoria inviato per sessione alle ' + startStr, {});
+      }
+    }
+
+    Logger.log('sendBookingReminders: completato. Promemoria inviati: ' + sentCount);
+  } catch (err) {
+    logAudit(LOG_LEVEL.ERROR, 'SEND_REMINDERS', '', err.message, {});
+    sendAdminAlert('Errore in sendBookingReminders', err.message);
   }
 }
 
